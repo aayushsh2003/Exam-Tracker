@@ -1,0 +1,6 @@
+{
+  "name": "2026 Exam & Recruitment Master Tracker",
+  "description": "Comprehensive tracking dashboard, visual timeline, milestone calendar, stage tracker, document vault, and AI strategy advisor for 20 applied recruitment examinations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
