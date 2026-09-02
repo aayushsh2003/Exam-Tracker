@@ -12,7 +12,8 @@ import {
   BarChart2,
   HelpCircle,
   TrendingUp,
-  BookmarkCheck
+  BookmarkCheck,
+  ShieldCheck
 } from 'lucide-react';
 import { ExamItem, CompletionOutcomeType, TimelineStageType } from '../types';
 
@@ -41,10 +42,10 @@ export const CompleteExamModal: React.FC<CompleteExamModalProps> = ({
 
   const [scoreMarks, setScoreMarks] = useState<string>(exam?.scoreMarks || '');
   const [outcome, setOutcome] = useState<CompletionOutcomeType>(
-    exam?.completionOutcome || (isAlreadyCompleted ? 'Attempted - Awaiting Result' : 'Attempted - Awaiting Result')
+    exam?.completionOutcome || 'Attempted - Awaiting Result'
   );
   const [targetStage, setTargetStage] = useState<TimelineStageType>(
-    exam?.timelineStage === 'Exam Completed' ? 'Exam Completed' : 'Exam Completed'
+    exam?.timelineStage || 'Exam Completed'
   );
   const [completionNotes, setCompletionNotes] = useState<string>(
     exam?.completionNotes || exam?.notes || ''
@@ -60,15 +61,34 @@ export const CompleteExamModal: React.FC<CompleteExamModalProps> = ({
         exam.completedDate || (exam.examDate && !exam.examDate.includes('TBA') ? exam.examDate.split('(')[0].trim() : new Date().toISOString().split('T')[0])
       );
       setScoreMarks(exam.scoreMarks || '');
-      setOutcome(exam.completionOutcome || 'Attempted - Awaiting Result');
+      setOutcome(exam.completionOutcome || (exam.isCompleted ? 'Attempted - Awaiting Result' : 'Attempted - Awaiting Result'));
+      setTargetStage(exam.timelineStage === 'Exam Completed' ? 'Exam Completed' : (exam.isCompleted ? 'Exam Completed' : 'Exam Completed'));
       setCompletionNotes(exam.completionNotes || exam.notes || '');
-      setMarkAttempted(true);
+      setMarkAttempted(exam.stageStatus?.examAttempted ?? true);
       setMarkAnswerKey(exam.stageStatus?.answerKeyChecked || false);
       setMarkResultAnnounced(exam.stageStatus?.resultAnnounced || false);
     }
   }, [exam]);
 
   if (!isOpen || !exam) return null;
+
+  const handleSelectOutcome = (newOutcome: CompletionOutcomeType) => {
+    setOutcome(newOutcome);
+    if (newOutcome === 'Answer Key Checked') {
+      setMarkAnswerKey(true);
+    } else if (newOutcome === 'Qualified for Next Stage / Mains') {
+      setMarkResultAnnounced(true);
+      setMarkAnswerKey(true);
+      setTargetStage('Mains');
+    } else if (newOutcome === 'Selected / In Merit List') {
+      setMarkResultAnnounced(true);
+      setMarkAnswerKey(true);
+      setTargetStage('Exam Completed');
+    } else if (newOutcome === 'Not Qualified / Attempt Complete') {
+      setMarkResultAnnounced(true);
+      setTargetStage('Exam Completed');
+    }
+  };
 
   const triggerConfettiAnimation = () => {
     setShowConfetti(true);
@@ -83,18 +103,20 @@ export const CompleteExamModal: React.FC<CompleteExamModalProps> = ({
     const updated: ExamItem = {
       ...exam,
       isCompleted: markAsDone,
-      status: markAsDone ? 'Completed' : 'Applied',
+      status: markAsDone ? (targetStage === 'Mains' || targetStage === 'Interview' ? 'Shortlisted' : 'Completed') : 'Applied',
       timelineStage: markAsDone ? targetStage : 'Application Submitted',
       completedDate: markAsDone ? completedDate : undefined,
-      scoreMarks: markAsDone ? scoreMarks : undefined,
+      scoreMarks: markAsDone ? (scoreMarks || 'Attempted') : undefined,
       completionOutcome: markAsDone ? outcome : undefined,
       completionNotes: markAsDone ? completionNotes : undefined,
       stageStatus: {
         ...exam.stageStatus,
+        applicationConfirmed: true,
+        admitCardDownloaded: true,
         examAttempted: markAsDone ? markAttempted : false,
         answerKeyChecked: markAsDone ? markAnswerKey : false,
         resultAnnounced: markAsDone ? markResultAnnounced : false,
-        nextStageQualified: markAsDone && outcome === 'Qualified for Next Stage / Mains',
+        nextStageQualified: markAsDone && (outcome === 'Qualified for Next Stage / Mains' || outcome === 'Selected / In Merit List'),
       },
       updatedAt: new Date().toISOString(),
     };
@@ -106,7 +128,7 @@ export const CompleteExamModal: React.FC<CompleteExamModalProps> = ({
 
     setTimeout(() => {
       onClose();
-    }, markAsDone ? 400 : 0);
+    }, markAsDone ? 300 : 0);
   };
 
   const handleReopen = () => {
@@ -117,14 +139,14 @@ export const CompleteExamModal: React.FC<CompleteExamModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden">
+      <div className="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden">
         {/* Celebration Confetti Overlay */}
         {showConfetti && (
           <div className="absolute inset-0 z-30 pointer-events-none flex items-center justify-center bg-indigo-950/20">
             <div className="text-center p-6 bg-white/95 rounded-2xl shadow-2xl border border-emerald-300 animate-bounce">
               <span className="text-4xl">🎉 🎯 ✨</span>
               <p className="text-sm font-extrabold text-emerald-800 mt-2">Exam Successfully Completed!</p>
-              <p className="text-xs text-slate-600">Milestone updated in your master tracker.</p>
+              <p className="text-xs text-slate-600">Stage & scorecard recorded in Master Tracker.</p>
             </div>
           </div>
         )}
@@ -137,7 +159,7 @@ export const CompleteExamModal: React.FC<CompleteExamModalProps> = ({
                 <Award className="w-4 h-4" />
               </span>
               <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
-                {isAlreadyCompleted ? 'Update Exam Completion Record' : 'Mark Exam as Completed'}
+                {isAlreadyCompleted ? 'Update Exam Completion & Outcome' : 'Mark Exam as Completed'}
               </span>
             </div>
             <h2 className="text-xl font-extrabold text-white tracking-tight">{exam.examName}</h2>
@@ -166,12 +188,12 @@ export const CompleteExamModal: React.FC<CompleteExamModalProps> = ({
               </div>
               <div>
                 <p className="text-xs font-extrabold">
-                  {isAlreadyCompleted ? 'Status: Exam Completed & Logged' : 'Ready to record completion?'}
+                  {isAlreadyCompleted ? 'Status: Exam Completed & Logged' : 'Log Completed Examination'}
                 </p>
                 <p className="text-[11px] text-slate-600 mt-0.5">
                   {isAlreadyCompleted 
-                    ? `Logged on ${exam.completedDate || exam.examDate}. Update marks or performance notes below.`
-                    : 'Log your test date, calculated marks, and outcome.'}
+                    ? `Recorded on ${exam.completedDate || exam.examDate}. Update marks, outcome or review notes below.`
+                    : 'Record your attempt date, marks scored, and stage outcome.'}
                 </p>
               </div>
             </div>
@@ -180,10 +202,11 @@ export const CompleteExamModal: React.FC<CompleteExamModalProps> = ({
               <button
                 type="button"
                 onClick={handleReopen}
-                className="px-2.5 py-1 text-[11px] font-semibold text-rose-700 hover:text-rose-900 hover:bg-rose-100 rounded-lg transition-colors border border-rose-200"
+                className="px-2.5 py-1 text-[11px] font-semibold text-rose-700 hover:text-rose-900 hover:bg-rose-100 rounded-lg transition-colors border border-rose-200 flex items-center gap-1"
                 title="Revert back to scheduled in-progress state"
               >
-                Reopen
+                <RotateCcw className="w-3 h-3" />
+                <span>Reopen</span>
               </button>
             )}
           </div>
@@ -214,7 +237,7 @@ export const CompleteExamModal: React.FC<CompleteExamModalProps> = ({
                 type="text"
                 value={scoreMarks}
                 onChange={(e) => setScoreMarks(e.target.value)}
-                placeholder="e.g., 84.5/100, 118/200, or 78%"
+                placeholder="e.g., 84.5/100, 118/200, 98.4 %ile"
                 className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono"
               />
               <span className="text-[10px] text-slate-500 mt-1 block">Official or calculated marks</span>
@@ -229,24 +252,29 @@ export const CompleteExamModal: React.FC<CompleteExamModalProps> = ({
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {[
-                { id: 'Attempted - Awaiting Result', label: 'Attempted • Awaiting Result' },
-                { id: 'Answer Key Checked', label: 'Answer Key Checked' },
-                { id: 'Qualified for Next Stage / Mains', label: 'Qualified for Next Stage / Mains' },
-                { id: 'Selected / In Merit List', label: 'Selected / Final Merit List' },
-                { id: 'Not Qualified / Attempt Complete', label: 'Not Qualified (Attempt Complete)' },
+                { id: 'Attempted - Awaiting Result', label: 'Attempted • Awaiting Result', desc: 'Exam taken, result pending' },
+                { id: 'Answer Key Checked', label: 'Answer Key Checked', desc: 'Responses cross-verified' },
+                { id: 'Qualified for Next Stage / Mains', label: 'Qualified for Next Stage / Mains', desc: 'Shortlisted for Mains/Skill' },
+                { id: 'Selected / In Merit List', label: 'Selected / Final Merit List', desc: 'Final appointment / rank' },
+                { id: 'Not Qualified / Attempt Complete', label: 'Not Qualified (Attempt Complete)', desc: 'Cutoff not met, archive post' },
               ].map((opt) => (
                 <button
                   type="button"
                   key={opt.id}
-                  onClick={() => setOutcome(opt.id as CompletionOutcomeType)}
-                  className={`p-2.5 rounded-xl border text-left text-xs font-semibold transition-all flex items-center justify-between ${
+                  onClick={() => handleSelectOutcome(opt.id as CompletionOutcomeType)}
+                  className={`p-2.5 rounded-xl border text-left text-xs font-semibold transition-all flex items-start justify-between ${
                     outcome === opt.id
                       ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
                       : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
                   }`}
                 >
-                  <span>{opt.label}</span>
-                  {outcome === opt.id && <CheckCircle2 className="w-4 h-4 text-white" />}
+                  <div>
+                    <span className="block font-bold">{opt.label}</span>
+                    <span className={`text-[10px] block mt-0.5 ${outcome === opt.id ? 'text-indigo-100' : 'text-slate-500'}`}>
+                      {opt.desc}
+                    </span>
+                  </div>
+                  {outcome === opt.id && <CheckCircle2 className="w-4 h-4 text-white shrink-0 mt-0.5 ml-2" />}
                 </button>
               ))}
             </div>
@@ -256,23 +284,29 @@ export const CompleteExamModal: React.FC<CompleteExamModalProps> = ({
           <div>
             <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-1.5 flex items-center gap-1">
               <BookmarkCheck className="w-3.5 h-3.5 text-indigo-600" />
-              Target Pipeline Stage
+              Target Pipeline Stage to Display
             </label>
             <select
               value={targetStage}
               onChange={(e) => setTargetStage(e.target.value as TimelineStageType)}
-              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-semibold"
             >
-              <option value="Exam Completed">7. Exam Completed & Results (Standard)</option>
-              <option value="Mains">4. Mains / Technical Phase (If Prelims cleared)</option>
-              <option value="Interview">5. Interview / Tier-III (If Mains cleared)</option>
-              <option value="Document Verification">6. Document Verification (If shortlisted)</option>
+              <option value="Exam Completed">7. Exam Completed & Results (Standard outcome)</option>
+              <option value="Mains">4. Mains / Technical Phase (If Prelims cleared & Mains scheduled)</option>
+              <option value="Interview">5. Interview / Tier-III (If Mains cleared & Interview invited)</option>
+              <option value="Document Verification">6. Document Verification (If shortlisted for DV)</option>
             </select>
+            <span className="text-[10px] text-slate-500 mt-1 block">
+              Determines how this exam is badged across Master Tracker and Pipeline.
+            </span>
           </div>
 
           {/* Stage Matrix Toggles */}
           <div className="p-3.5 rounded-2xl bg-white border border-slate-200 space-y-2.5">
-            <span className="text-xs font-bold text-slate-800 block mb-1">Update Associated Matrix Flags:</span>
+            <span className="text-xs font-bold text-slate-800 block mb-1 flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-indigo-600" />
+              Stage Matrix Verification Flags:
+            </span>
             
             <div
               onClick={() => setMarkAttempted(!markAttempted)}
@@ -352,3 +386,4 @@ export const CompleteExamModal: React.FC<CompleteExamModalProps> = ({
     </div>
   );
 };
+
