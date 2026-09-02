@@ -47,6 +47,116 @@ export const ExamDetailDrawer: React.FC<ExamDetailDrawerProps> = ({
   const priBadge = getPriorityBadgeColor(exam.priority);
   const catBadge = getCategoryBadgeColor(exam.category);
 
+  const handleSetTimelineStage = (stage: ExamItem['timelineStage']) => {
+    let updated: ExamItem = { ...exam, timelineStage: stage };
+    
+    if (stage === 'Application Submitted') {
+      updated = {
+        ...updated,
+        isCompleted: false,
+        status: 'Applied',
+        stageStatus: {
+          ...updated.stageStatus,
+          applicationConfirmed: true,
+          admitCardDownloaded: false,
+          examAttempted: false,
+          answerKeyChecked: false,
+          resultAnnounced: false,
+          nextStageQualified: false,
+        },
+      };
+    } else if (stage === 'Admit Card') {
+      updated = {
+        ...updated,
+        isCompleted: false,
+        status: 'Applied',
+        stageStatus: {
+          ...updated.stageStatus,
+          applicationConfirmed: true,
+          admitCardDownloaded: true,
+          examAttempted: false,
+          answerKeyChecked: false,
+          resultAnnounced: false,
+          nextStageQualified: false,
+        },
+        documentsReady: {
+          ...updated.documentsReady,
+          admitCard: true,
+        },
+      };
+    } else if (stage === 'Prelims') {
+      updated = {
+        ...updated,
+        isCompleted: false,
+        status: 'Applied',
+        stageStatus: {
+          ...updated.stageStatus,
+          applicationConfirmed: true,
+          admitCardDownloaded: true,
+          examAttempted: false,
+        },
+      };
+    } else if (stage === 'Mains') {
+      updated = {
+        ...updated,
+        isCompleted: false,
+        status: 'Applied',
+        stageStatus: {
+          ...updated.stageStatus,
+          applicationConfirmed: true,
+          admitCardDownloaded: true,
+          examAttempted: true,
+        },
+      };
+    } else if (stage === 'Interview') {
+      updated = {
+        ...updated,
+        isCompleted: false,
+        status: 'Shortlisted',
+        stageStatus: {
+          ...updated.stageStatus,
+          applicationConfirmed: true,
+          admitCardDownloaded: true,
+          examAttempted: true,
+          nextStageQualified: true,
+        },
+      };
+    } else if (stage === 'Document Verification') {
+      updated = {
+        ...updated,
+        isCompleted: false,
+        status: 'Shortlisted',
+        stageStatus: {
+          ...updated.stageStatus,
+          applicationConfirmed: true,
+          admitCardDownloaded: true,
+          examAttempted: true,
+          nextStageQualified: true,
+        },
+      };
+    } else if (stage === 'Exam Completed') {
+      if (onOpenCompleteModal) {
+        onOpenCompleteModal(exam);
+        return;
+      }
+      updated = {
+        ...updated,
+        isCompleted: true,
+        status: 'Completed',
+        timelineStage: 'Exam Completed',
+        stageStatus: {
+          ...updated.stageStatus,
+          applicationConfirmed: true,
+          admitCardDownloaded: true,
+          examAttempted: true,
+          resultAnnounced: true,
+        },
+      };
+    }
+    
+    onUpdateExam(updated);
+  };
+
   const toggleDocItem = (docKey: keyof ExamItem['documentsReady']) => {
     const updated: ExamItem = {
       ...exam,
@@ -68,6 +178,16 @@ export const ExamDetailDrawer: React.FC<ExamDetailDrawerProps> = ({
     };
     onUpdateExam(updated);
   };
+
+  const lifecycleStages: { id: ExamItem['timelineStage']; label: string; sub: string; step: number }[] = [
+    { id: 'Application Submitted', label: '1. Application Submitted', sub: 'Registration & Fee Confirmed', step: 1 },
+    { id: 'Admit Card', label: '2. Admit Card Available', sub: 'Hall ticket downloaded, exam pending', step: 2 },
+    { id: 'Prelims', label: '3. Prelims / CBT Phase', sub: 'Screening / Written exam', step: 3 },
+    { id: 'Mains', label: '4. Mains Phase', sub: 'Technical domain test', step: 4 },
+    { id: 'Interview', label: '5. Interview / Tier-III', sub: 'Personality / Skill evaluation', step: 5 },
+    { id: 'Document Verification', label: '6. Doc Verification (DV)', sub: 'Degree & Identity check', step: 6 },
+    { id: 'Exam Completed', label: '7. Exam Completed & Results', sub: 'Scorecard & merit tracking', step: 7 },
+  ];
 
   const docList: { key: keyof ExamItem['documentsReady']; label: string }[] = [
     { key: 'applicationPdf', label: 'Application Form PDF (Saved & Printed)' },
@@ -127,6 +247,86 @@ export const ExamDetailDrawer: React.FC<ExamDetailDrawerProps> = ({
 
         {/* Scrollable Content */}
         <div className="p-6 overflow-y-auto space-y-6 flex-1 bg-slate-50/40">
+          {/* Interactive Lifecycle Stage Stepper */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-indigo-600" />
+                Recruitment Lifecycle Stage
+              </h3>
+              <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
+                exam.timelineStage === 'Application Submitted'
+                  ? 'bg-indigo-100 text-indigo-800'
+                  : exam.timelineStage === 'Admit Card'
+                  ? 'bg-blue-100 text-blue-800'
+                  : exam.timelineStage === 'Prelims'
+                  ? 'bg-amber-100 text-amber-800'
+                  : exam.timelineStage === 'Mains'
+                  ? 'bg-purple-100 text-purple-800'
+                  : exam.timelineStage === 'Exam Completed'
+                  ? 'bg-emerald-100 text-emerald-800'
+                  : 'bg-slate-100 text-slate-800'
+              }`}>
+                Current: {exam.timelineStage}
+              </span>
+            </div>
+
+            <p className="text-xs text-slate-500">
+              Click any stage below to update this exam's progress status in real time:
+            </p>
+
+            {/* Stage Stepper Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+              {lifecycleStages.map((st) => {
+                const isActive = exam.timelineStage === st.id;
+                return (
+                  <button
+                    key={st.id}
+                    onClick={() => handleSetTimelineStage(st.id)}
+                    className={`p-2.5 rounded-xl border text-left transition-all flex items-start gap-2.5 ${
+                      isActive
+                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm ring-2 ring-indigo-200'
+                        : 'bg-slate-50 hover:bg-indigo-50/60 border-slate-200 text-slate-700 hover:border-indigo-300'
+                    }`}
+                  >
+                    <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 ${
+                      isActive ? 'bg-white text-indigo-600' : 'bg-slate-200 text-slate-700'
+                    }`}>
+                      {st.step}
+                    </div>
+                    <div>
+                      <span className={`text-xs font-bold block ${isActive ? 'text-white' : 'text-slate-900'}`}>
+                        {st.label}
+                      </span>
+                      <span className={`text-[10px] block mt-0.5 ${isActive ? 'text-indigo-100' : 'text-slate-500'}`}>
+                        {st.sub}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Context Notice for Application Submitted vs Admit Card */}
+            {exam.timelineStage === 'Application Submitted' && (
+              <div className="p-3 rounded-xl bg-indigo-50 border border-indigo-100 text-xs text-indigo-900 flex items-start gap-2">
+                <Clock className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold">Application Submitted:</span> Registration form is confirmed and payment is recorded. Official admit card / hall ticket has not yet been released.
+                </div>
+              </div>
+            )}
+
+            {exam.timelineStage === 'Admit Card' && (
+              <div className="p-3 rounded-xl bg-blue-50 border border-blue-100 text-xs text-blue-900 flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold">Admit Card Available:</span> Hall ticket is downloaded and exam venue is confirmed. The examination has NOT been attempted yet.
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Complete Exam Action Card / Dossier */}
           <div className={`p-4 rounded-2xl border transition-all ${
             isCompleted 

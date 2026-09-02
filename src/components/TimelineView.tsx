@@ -38,9 +38,11 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
 
   const filteredExams = exams.filter((e) => {
     if (activeFilter === 'ALL') return true;
-    if (activeFilter === 'COMPLETED') return e.status === 'Completed' || e.timelineStage === 'Exam Completed';
-    if (activeFilter === 'MAINS') return e.timelineStage === 'Mains';
+    if (activeFilter === 'APP_SUBMITTED') return e.timelineStage === 'Application Submitted';
+    if (activeFilter === 'ADMIT_CARD') return e.timelineStage === 'Admit Card';
     if (activeFilter === 'PRELIMS') return e.timelineStage === 'Prelims';
+    if (activeFilter === 'MAINS') return e.timelineStage === 'Mains';
+    if (activeFilter === 'COMPLETED') return e.status === 'Completed' || e.timelineStage === 'Exam Completed';
     if (activeFilter === 'VERY_HIGH') return e.priority === 'Very High';
     return true;
   });
@@ -68,10 +70,12 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
           <div className="flex items-center gap-1.5 flex-wrap">
             {[
               { id: 'ALL', label: `All (${exams.length})` },
-              { id: 'VERY_HIGH', label: 'Very High Priority' },
-              { id: 'MAINS', label: 'Mains Stage' },
+              { id: 'APP_SUBMITTED', label: 'App Submitted' },
+              { id: 'ADMIT_CARD', label: 'Admit Card Ready' },
               { id: 'PRELIMS', label: 'Prelims Stage' },
+              { id: 'MAINS', label: 'Mains Stage' },
               { id: 'COMPLETED', label: 'Completed' },
+              { id: 'VERY_HIGH', label: 'Very High Priority' },
             ].map((f) => (
               <button
                 key={f.id}

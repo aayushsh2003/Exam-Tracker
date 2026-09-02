@@ -357,6 +357,10 @@ export default function App() {
           setExamToComplete(null);
         }}
         exam={examToComplete}
+        onSaveCompletion={(updated) => {
+          handleUpdateExam(updated);
+          showToast(`Exam outcome logged for ${updated.examName}`);
+        }}
         onSave={(updated) => {
           handleUpdateExam(updated);
           showToast(`Exam outcome logged for ${updated.examName}`);

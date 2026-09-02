@@ -41,13 +41,59 @@ export const StageTrackerView: React.FC<StageTrackerViewProps> = ({
   );
 
   const toggleStageFlag = (exam: ExamItem, key: keyof ExamItem['stageStatus']) => {
-    const updated: ExamItem = {
+    const nextVal = !exam.stageStatus[key];
+    let updated: ExamItem = {
       ...exam,
       stageStatus: {
         ...exam.stageStatus,
-        [key]: !exam.stageStatus[key],
+        [key]: nextVal,
       },
     };
+
+    if (key === 'admitCardDownloaded') {
+      updated.documentsReady = {
+        ...updated.documentsReady,
+        admitCard: nextVal,
+      };
+      if (nextVal && updated.timelineStage === 'Application Submitted') {
+        updated.timelineStage = 'Admit Card';
+      } else if (!nextVal && updated.timelineStage === 'Admit Card') {
+        updated.timelineStage = 'Application Submitted';
+      }
+    } else if (key === 'examAttempted') {
+      if (!nextVal && updated.isCompleted) {
+        updated.isCompleted = false;
+        updated.status = 'Applied';
+        updated.timelineStage = 'Prelims';
+      }
+    }
+
+    onUpdateExam(updated);
+  };
+
+  const handleChangeStage = (exam: ExamItem, stage: ExamItem['timelineStage']) => {
+    let updated: ExamItem = { ...exam, timelineStage: stage };
+    if (stage === 'Application Submitted') {
+      updated.isCompleted = false;
+      updated.status = 'Applied';
+      updated.stageStatus.applicationConfirmed = true;
+      updated.stageStatus.admitCardDownloaded = false;
+      updated.stageStatus.examAttempted = false;
+    } else if (stage === 'Admit Card') {
+      updated.isCompleted = false;
+      updated.status = 'Applied';
+      updated.stageStatus.applicationConfirmed = true;
+      updated.stageStatus.admitCardDownloaded = true;
+      updated.stageStatus.examAttempted = false;
+      updated.documentsReady.admitCard = true;
+    } else if (stage === 'Exam Completed') {
+      if (onOpenCompleteModal) {
+        onOpenCompleteModal(exam);
+        return;
+      }
+      updated.isCompleted = true;
+      updated.status = 'Completed';
+    }
     onUpdateExam(updated);
   };
 
@@ -109,17 +155,18 @@ export const StageTrackerView: React.FC<StageTrackerViewProps> = ({
           <table className="w-full text-left text-xs border-collapse">
             <thead className="sticky top-0 z-20 bg-slate-900 text-white font-semibold text-[11px] uppercase tracking-wider shadow-sm">
               <tr>
-                <th className="py-3.5 px-3 min-w-[200px] border-b border-slate-800">Exam / Post Title</th>
-                <th className="py-3.5 px-3 min-w-[100px] text-center border-b border-slate-800">App Confirmed</th>
-                <th className="py-3.5 px-3 min-w-[110px] text-center border-b border-slate-800">Admit Card</th>
-                <th className="py-3.5 px-3 min-w-[130px] border-b border-slate-800">Exam Date</th>
-                <th className="py-3.5 px-3 min-w-[110px] text-center border-b border-slate-800">Attempted</th>
-                <th className="py-3.5 px-3 min-w-[110px] text-center border-b border-slate-800">Answer Key</th>
-                <th className="py-3.5 px-3 min-w-[110px] text-center border-b border-slate-800">Result Status</th>
-                <th className="py-3.5 px-3 min-w-[110px] text-center border-b border-slate-800">Docs Ready</th>
-                <th className="py-3.5 px-3 min-w-[125px] text-center border-b border-slate-800">Completion & Score</th>
-                <th className="py-3.5 px-3 min-w-[90px] border-b border-slate-800">Priority</th>
-                <th className="py-3.5 px-3 min-w-[240px] border-b border-slate-800">Notes & Verification Focus</th>
+                <th className="py-3.5 px-3 min-w-[190px] border-b border-slate-800">Exam / Post Title</th>
+                <th className="py-3.5 px-3 min-w-[140px] border-b border-slate-800">Lifecycle Stage</th>
+                <th className="py-3.5 px-3 min-w-[95px] text-center border-b border-slate-800">App Confirmed</th>
+                <th className="py-3.5 px-3 min-w-[105px] text-center border-b border-slate-800">Admit Card</th>
+                <th className="py-3.5 px-3 min-w-[125px] border-b border-slate-800">Exam Date</th>
+                <th className="py-3.5 px-3 min-w-[95px] text-center border-b border-slate-800">Attempted</th>
+                <th className="py-3.5 px-3 min-w-[95px] text-center border-b border-slate-800">Answer Key</th>
+                <th className="py-3.5 px-3 min-w-[95px] text-center border-b border-slate-800">Result Status</th>
+                <th className="py-3.5 px-3 min-w-[95px] text-center border-b border-slate-800">Docs Ready</th>
+                <th className="py-3.5 px-3 min-w-[120px] text-center border-b border-slate-800">Completion & Score</th>
+                <th className="py-3.5 px-3 min-w-[85px] border-b border-slate-800">Priority</th>
+                <th className="py-3.5 px-3 min-w-[220px] border-b border-slate-800">Notes & Verification Focus</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200/70 text-slate-700">
@@ -150,6 +197,35 @@ export const StageTrackerView: React.FC<StageTrackerViewProps> = ({
                         {exam.postTitle}
                       </span>
                       <span className="text-[10px] text-slate-400">{exam.organization}</span>
+                    </td>
+
+                    {/* Lifecycle Stage Selector */}
+                    <td className="py-3 px-3">
+                      <select
+                        value={exam.timelineStage}
+                        onChange={(e) => handleChangeStage(exam, e.target.value as any)}
+                        className={`text-[11px] font-bold px-2 py-1 rounded-lg border focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer w-full ${
+                          exam.timelineStage === 'Application Submitted'
+                            ? 'bg-indigo-50 text-indigo-800 border-indigo-200'
+                            : exam.timelineStage === 'Admit Card'
+                            ? 'bg-blue-50 text-blue-800 border-blue-200'
+                            : exam.timelineStage === 'Prelims'
+                            ? 'bg-amber-50 text-amber-800 border-amber-200'
+                            : exam.timelineStage === 'Mains'
+                            ? 'bg-purple-50 text-purple-800 border-purple-200'
+                            : exam.timelineStage === 'Exam Completed'
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                            : 'bg-slate-50 text-slate-800 border-slate-200'
+                        }`}
+                      >
+                        <option value="Application Submitted">1. Application Submitted</option>
+                        <option value="Admit Card">2. Admit Card Available</option>
+                        <option value="Prelims">3. Prelims / CBT</option>
+                        <option value="Mains">4. Mains Phase</option>
+                        <option value="Interview">5. Interview</option>
+                        <option value="Document Verification">6. Doc Verification</option>
+                        <option value="Exam Completed">7. Exam Completed</option>
+                      </select>
                     </td>
 
                     {/* App Confirmed */}

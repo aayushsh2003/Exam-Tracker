@@ -20,53 +20,55 @@ interface CompleteExamModalProps {
   isOpen: boolean;
   exam: ExamItem | null;
   onClose: () => void;
-  onSaveCompletion: (updatedExam: ExamItem) => void;
+  onSave?: (updatedExam: ExamItem) => void;
+  onSaveCompletion?: (updatedExam: ExamItem) => void;
 }
 
 export const CompleteExamModal: React.FC<CompleteExamModalProps> = ({
   isOpen,
   exam,
   onClose,
+  onSave,
   onSaveCompletion,
 }) => {
-  if (!isOpen || !exam) return null;
-
-  const isAlreadyCompleted = exam.status === 'Completed' || exam.timelineStage === 'Exam Completed' || exam.isCompleted;
+  const isAlreadyCompleted = exam ? (exam.status === 'Completed' || exam.timelineStage === 'Exam Completed' || exam.isCompleted) : false;
 
   const [completedDate, setCompletedDate] = useState<string>(() => {
-    if (exam.completedDate) return exam.completedDate;
-    if (exam.examDate && !exam.examDate.includes('TBA')) return exam.examDate.split('(')[0].trim();
+    if (exam?.completedDate) return exam.completedDate;
+    if (exam?.examDate && !exam.examDate.includes('TBA')) return exam.examDate.split('(')[0].trim();
     return new Date().toISOString().split('T')[0];
   });
 
-  const [scoreMarks, setScoreMarks] = useState<string>(exam.scoreMarks || '');
+  const [scoreMarks, setScoreMarks] = useState<string>(exam?.scoreMarks || '');
   const [outcome, setOutcome] = useState<CompletionOutcomeType>(
-    exam.completionOutcome || (isAlreadyCompleted ? 'Attempted - Awaiting Result' : 'Attempted - Awaiting Result')
+    exam?.completionOutcome || (isAlreadyCompleted ? 'Attempted - Awaiting Result' : 'Attempted - Awaiting Result')
   );
   const [targetStage, setTargetStage] = useState<TimelineStageType>(
-    exam.timelineStage === 'Exam Completed' ? 'Exam Completed' : 'Exam Completed'
+    exam?.timelineStage === 'Exam Completed' ? 'Exam Completed' : 'Exam Completed'
   );
   const [completionNotes, setCompletionNotes] = useState<string>(
-    exam.completionNotes || exam.notes || ''
+    exam?.completionNotes || exam?.notes || ''
   );
   const [markAttempted, setMarkAttempted] = useState<boolean>(true);
-  const [markAnswerKey, setMarkAnswerKey] = useState<boolean>(exam.stageStatus?.answerKeyChecked || false);
-  const [markResultAnnounced, setMarkResultAnnounced] = useState<boolean>(exam.stageStatus?.resultAnnounced || false);
+  const [markAnswerKey, setMarkAnswerKey] = useState<boolean>(exam?.stageStatus?.answerKeyChecked || false);
+  const [markResultAnnounced, setMarkResultAnnounced] = useState<boolean>(exam?.stageStatus?.resultAnnounced || false);
   const [showConfetti, setShowConfetti] = useState<boolean>(false);
 
   useEffect(() => {
     if (exam) {
       setCompletedDate(
-        exam.completedDate || (exam.examDate && !exam.examDate.includes('TBA') ? exam.examDate.split('(')[0].trim() : '2026-08-23')
+        exam.completedDate || (exam.examDate && !exam.examDate.includes('TBA') ? exam.examDate.split('(')[0].trim() : new Date().toISOString().split('T')[0])
       );
       setScoreMarks(exam.scoreMarks || '');
       setOutcome(exam.completionOutcome || 'Attempted - Awaiting Result');
-      setCompletionNotes(exam.completionNotes || '');
+      setCompletionNotes(exam.completionNotes || exam.notes || '');
       setMarkAttempted(true);
       setMarkAnswerKey(exam.stageStatus?.answerKeyChecked || false);
       setMarkResultAnnounced(exam.stageStatus?.resultAnnounced || false);
     }
   }, [exam]);
+
+  if (!isOpen || !exam) return null;
 
   const triggerConfettiAnimation = () => {
     setShowConfetti(true);
@@ -97,8 +99,12 @@ export const CompleteExamModal: React.FC<CompleteExamModalProps> = ({
       updatedAt: new Date().toISOString(),
     };
 
+    const saveCallback = onSaveCompletion || onSave;
+    if (saveCallback) {
+      saveCallback(updated);
+    }
+
     setTimeout(() => {
-      onSaveCompletion(updated);
       onClose();
     }, markAsDone ? 400 : 0);
   };

@@ -394,7 +394,19 @@ export const MasterTrackerView: React.FC<MasterTrackerViewProps> = ({
 
                         {/* Timeline Stage */}
                         <td className="py-3 px-3">
-                          <span className={`font-semibold ${isCompleted ? 'text-emerald-700 font-bold' : 'text-slate-800'}`}>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                            exam.timelineStage === 'Application Submitted'
+                              ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                              : exam.timelineStage === 'Admit Card'
+                              ? 'bg-blue-50 text-blue-700 border-blue-200'
+                              : exam.timelineStage === 'Prelims'
+                              ? 'bg-amber-50 text-amber-700 border-amber-200'
+                              : exam.timelineStage === 'Mains'
+                              ? 'bg-purple-50 text-purple-700 border-purple-200'
+                              : exam.timelineStage === 'Exam Completed' || isCompleted
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              : 'bg-slate-100 text-slate-700 border-slate-200'
+                          }`}>
                             {exam.timelineStage}
                           </span>
                         </td>
@@ -515,8 +527,20 @@ export const MasterTrackerView: React.FC<MasterTrackerViewProps> = ({
                 </div>
 
                 <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
-                  <span className={`text-xs font-bold ${isCompleted ? 'text-emerald-700' : 'text-indigo-600'}`}>
-                    {exam.timelineStage}
+                  <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${
+                    exam.timelineStage === 'Application Submitted'
+                      ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                      : exam.timelineStage === 'Admit Card'
+                      ? 'bg-blue-50 text-blue-700 border-blue-200'
+                      : exam.timelineStage === 'Prelims'
+                      ? 'bg-amber-50 text-amber-700 border-amber-200'
+                      : exam.timelineStage === 'Mains'
+                      ? 'bg-purple-50 text-purple-700 border-purple-200'
+                      : exam.timelineStage === 'Exam Completed' || isCompleted
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      : 'bg-slate-100 text-slate-700 border-slate-200'
+                  }`}>
+                    Stage: {exam.timelineStage}
                   </span>
                   <div className="flex items-center gap-1">
                     {onOpenCompleteModal && (
