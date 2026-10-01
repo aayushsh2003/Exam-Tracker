@@ -52,22 +52,28 @@ import {
 import { 
   exportExamsToCsv, 
   exportAllDataToJson,
-  exportExamsOnlyToJson,
-  parseAndValidateExamJson
+  exportCategorizedJson,
+  exportExamsOnlyToJson, 
+  parseAndValidateExamJson 
 } from './utils/exportUtils';
 
 export default function App() {
-  // State management with localStorage synchronization
+  // State management with localStorage synchronization (version v3 with 31 exams)
   const [exams, setExams] = useState<ExamItem[]>(() => {
-    const saved = localStorage.getItem('exams_master_tracker_v1');
+    const saved = localStorage.getItem('exams_master_tracker_v3');
     if (saved) {
-      try { return JSON.parse(saved); } catch (e) { console.error(e); }
+      try { 
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length >= 25) {
+          return parsed;
+        }
+      } catch (e) { console.error(e); }
     }
     return INITIAL_EXAMS;
   });
 
   const [milestones, setMilestones] = useState<MilestoneAction[]>(() => {
-    const saved = localStorage.getItem('exams_milestones_v1');
+    const saved = localStorage.getItem('exams_milestones_v3');
     if (saved) {
       try { return JSON.parse(saved); } catch (e) { console.error(e); }
     }
@@ -92,11 +98,11 @@ export default function App() {
 
   // Sync to local storage
   useEffect(() => {
-    localStorage.setItem('exams_master_tracker_v1', JSON.stringify(exams));
+    localStorage.setItem('exams_master_tracker_v3', JSON.stringify(exams));
   }, [exams]);
 
   useEffect(() => {
-    localStorage.setItem('exams_milestones_v1', JSON.stringify(milestones));
+    localStorage.setItem('exams_milestones_v3', JSON.stringify(milestones));
   }, [milestones]);
 
   const showToast = (msg: string) => {
@@ -199,9 +205,11 @@ export default function App() {
   const handleResetData = () => {
     setExams(INITIAL_EXAMS);
     setMilestones(INITIAL_MILESTONES);
+    localStorage.removeItem('exams_master_tracker_v3');
+    localStorage.removeItem('exams_milestones_v3');
     localStorage.removeItem('exams_master_tracker_v1');
     localStorage.removeItem('exams_milestones_v1');
-    showToast('Default 2026 dataset restored (20 confirmed exams)');
+    showToast('Default dataset restored (31 categorized exams)');
   };
 
   const handleOpenAiForExam = (exam: ExamItem) => {

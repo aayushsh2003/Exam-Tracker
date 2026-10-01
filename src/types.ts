@@ -15,6 +15,7 @@ export type TimelineStageType =
 
 export type CompletionOutcomeType = 
   | 'Attempted - Awaiting Result'
+  | 'CBT Completed - Result / Next Stage'
   | 'Answer Key Checked'
   | 'Qualified for Next Stage / Mains'
   | 'Selected / In Merit List'
@@ -36,6 +37,8 @@ export interface StageStatusChecklist {
   resultAnnounced: boolean;
   nextStageQualified: boolean;
 }
+
+export type ExamCategoryGroup = 'completedAnnounced' | 'completedAwaited' | 'upcomingActive' | 'awaitingDate';
 
 export interface ExamItem {
   id: string;
@@ -69,9 +72,13 @@ export interface ExamItem {
   isCompleted?: boolean;
   completedDate?: string;
   scoreMarks?: string;
-  completionOutcome?: CompletionOutcomeType;
+  completionOutcome?: CompletionOutcomeType | string;
   completionNotes?: string;
   updatedAt?: string;
+  categoryGroup?: ExamCategoryGroup;
+  statusTag?: string;
+  prevExamDate?: string;
+  displayOrder?: number;
 }
 
 export interface MilestoneAction {
