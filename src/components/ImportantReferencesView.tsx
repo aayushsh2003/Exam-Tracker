@@ -10,7 +10,10 @@ import {
   Search,
   Sparkles,
   Layers,
-  FolderLock
+  FolderLock,
+  Download,
+  Upload,
+  Database
 } from 'lucide-react';
 import { ImportantReference, ExamItem } from '../types';
 
@@ -19,6 +22,8 @@ interface ImportantReferencesViewProps {
   exams: ExamItem[];
   onSelectExam: (exam: ExamItem) => void;
   onOpenAiAdvisor: () => void;
+  onOpenBackupModal?: () => void;
+  onExportJson?: () => void;
 }
 
 export const ImportantReferencesView: React.FC<ImportantReferencesViewProps> = ({
@@ -26,6 +31,8 @@ export const ImportantReferencesView: React.FC<ImportantReferencesViewProps> = (
   exams,
   onSelectExam,
   onOpenAiAdvisor,
+  onOpenBackupModal,
+  onExportJson,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
@@ -127,6 +134,43 @@ export const ImportantReferencesView: React.FC<ImportantReferencesViewProps> = (
               </div>
             );
           })}
+        </div>
+      </div>
+
+      {/* Offline JSON Backup & Snapshot Card */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
+            <Database className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="text-sm font-bold text-slate-900">Digital Archive & JSON Data Backup</h4>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Keep a portable offline snapshot of all {exams.length} applied vacancy records, custom dates, and stage checklists.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap shrink-0">
+          {onExportJson && (
+            <button
+              onClick={onExportJson}
+              className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs transition-colors flex items-center gap-1.5"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Download JSON Backup</span>
+            </button>
+          )}
+
+          {onOpenBackupModal && (
+            <button
+              onClick={onOpenBackupModal}
+              className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors flex items-center gap-1.5"
+            >
+              <Upload className="w-3.5 h-3.5 text-slate-500" />
+              <span>Restore JSON / Manage</span>
+            </button>
+          )}
         </div>
       </div>
 

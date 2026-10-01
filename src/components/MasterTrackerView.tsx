@@ -30,6 +30,8 @@ interface MasterTrackerViewProps {
   onAddNewExam: () => void;
   onOpenAiAdvisorForExam: (exam: ExamItem) => void;
   onExportCsv: () => void;
+  onExportJson?: () => void;
+  onOpenBackupModal?: () => void;
   onOpenCompleteModal?: (exam: ExamItem) => void;
 }
 
@@ -41,6 +43,8 @@ export const MasterTrackerView: React.FC<MasterTrackerViewProps> = ({
   onAddNewExam,
   onOpenAiAdvisorForExam,
   onExportCsv,
+  onExportJson,
+  onOpenBackupModal,
   onOpenCompleteModal,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -178,6 +182,19 @@ export const MasterTrackerView: React.FC<MasterTrackerViewProps> = ({
               </button>
             </div>
 
+            {/* JSON Download */}
+            {onExportJson && (
+              <button
+                id="btn-export-master-json"
+                onClick={onExportJson}
+                title="Download exams data in JSON format"
+                className="px-3 py-2 rounded-xl border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 text-indigo-900 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+              >
+                <Download className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Download JSON</span>
+              </button>
+            )}
+
             {/* CSV Export */}
             <button
               id="btn-export-master-csv"
@@ -185,8 +202,20 @@ export const MasterTrackerView: React.FC<MasterTrackerViewProps> = ({
               className="px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors"
             >
               <Download className="w-3.5 h-3.5 text-slate-500" />
-              <span className="hidden sm:inline">Export CSV</span>
+              <span className="hidden sm:inline">CSV</span>
             </button>
+
+            {/* Backup Hub Modal */}
+            {onOpenBackupModal && (
+              <button
+                id="btn-open-backup-master"
+                onClick={onOpenBackupModal}
+                title="Open Data Backup & JSON Upload/Download Center"
+                className="px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+              >
+                <span>Backup & Restore</span>
+              </button>
+            )}
 
             {/* Add New Exam */}
             <button

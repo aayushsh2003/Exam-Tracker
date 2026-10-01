@@ -32,9 +32,12 @@ import {
 import { 
   ExamDetailDrawer 
 } from './components/ExamDetailDrawer';
-import {
-  CompleteExamModal
+import { 
+  CompleteExamModal 
 } from './components/CompleteExamModal';
+import { 
+  DataBackupModal 
+} from './components/DataBackupModal';
 import { 
   INITIAL_EXAMS, 
   INITIAL_MILESTONES, 
@@ -48,7 +51,9 @@ import {
 } from './types';
 import { 
   exportExamsToCsv, 
-  exportAllDataToJson 
+  exportAllDataToJson,
+  exportExamsOnlyToJson,
+  parseAndValidateExamJson
 } from './utils/exportUtils';
 
 export default function App() {
@@ -83,6 +88,7 @@ export default function App() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
   const [examToComplete, setExamToComplete] = useState<ExamItem | null>(null);
+  const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
 
   // Sync to local storage
   useEffect(() => {
@@ -95,7 +101,7 @@ export default function App() {
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
+    setTimeout(() => setToastMessage(null), 3500);
   };
 
   // Exam item CRUD operations
@@ -155,7 +161,7 @@ export default function App() {
 
   const handleExportJson = () => {
     exportAllDataToJson(exams, milestones);
-    showToast('Backup JSON exported');
+    showToast(`Backup JSON with ${exams.length} exams downloaded successfully`);
   };
 
   const handleImportJson = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -164,30 +170,38 @@ export default function App() {
 
     const reader = new FileReader();
     reader.onload = (event) => {
-      try {
-        const parsed = JSON.parse(event.target?.result as string);
-        if (parsed.exams && Array.isArray(parsed.exams)) {
-          setExams(parsed.exams);
+      const content = event.target?.result as string;
+      const res = parseAndValidateExamJson(content);
+      if (res.success && res.exams) {
+        setExams(res.exams);
+        if (res.milestones && res.milestones.length > 0) {
+          setMilestones(res.milestones);
         }
-        if (parsed.milestones && Array.isArray(parsed.milestones)) {
-          setMilestones(parsed.milestones);
-        }
-        showToast('Backup restored successfully');
-      } catch (err) {
-        alert('Invalid JSON backup file format');
+        showToast(`Successfully restored ${res.exams.length} exam posts from ${file.name}`);
+      } else {
+        showToast(res.error || 'Invalid JSON format in uploaded file');
       }
     };
+    reader.onerror = () => {
+      showToast('Error reading uploaded JSON file');
+    };
     reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  const handleDirectImportData = (newExams: ExamItem[], newMilestones?: MilestoneAction[]) => {
+    setExams(newExams);
+    if (newMilestones && newMilestones.length > 0) {
+      setMilestones(newMilestones);
+    }
   };
 
   const handleResetData = () => {
-    if (confirm('Reset entire tracker back to default 20 confirmed 2026 exams data?')) {
-      setExams(INITIAL_EXAMS);
-      setMilestones(INITIAL_MILESTONES);
-      localStorage.removeItem('exams_master_tracker_v1');
-      localStorage.removeItem('exams_milestones_v1');
-      showToast('Default 2026 dataset restored');
-    }
+    setExams(INITIAL_EXAMS);
+    setMilestones(INITIAL_MILESTONES);
+    localStorage.removeItem('exams_master_tracker_v1');
+    localStorage.removeItem('exams_milestones_v1');
+    showToast('Default 2026 dataset restored (20 confirmed exams)');
   };
 
   const handleOpenAiForExam = (exam: ExamItem) => {
@@ -216,6 +230,7 @@ export default function App() {
         onExportCsv={handleExportCsv}
         onExportJson={handleExportJson}
         onImportJson={handleImportJson}
+        onOpenBackupModal={() => setIsBackupModalOpen(true)}
         onResetData={handleResetData}
         onOpenAiAdvisor={() => {
           setAiExamContext(null);
@@ -254,6 +269,8 @@ export default function App() {
             }}
             onOpenAiAdvisorForExam={handleOpenAiForExam}
             onExportCsv={handleExportCsv}
+            onExportJson={handleExportJson}
+            onOpenBackupModal={() => setIsBackupModalOpen(true)}
             onOpenCompleteModal={(exam) => {
               setExamToComplete(exam);
               setIsCompleteModalOpen(true);
@@ -307,6 +324,8 @@ export default function App() {
               setAiExamContext(null);
               setIsAiModalOpen(true);
             }}
+            onOpenBackupModal={() => setIsBackupModalOpen(true)}
+            onExportJson={handleExportJson}
           />
         )}
       </main>
@@ -387,6 +406,17 @@ export default function App() {
         }}
         selectedExam={aiExamContext}
         exams={exams}
+      />
+
+      {/* Data Backup & JSON Management Modal */}
+      <DataBackupModal
+        isOpen={isBackupModalOpen}
+        onClose={() => setIsBackupModalOpen(false)}
+        exams={exams}
+        milestones={milestones}
+        onImportData={handleDirectImportData}
+        onResetData={handleResetData}
+        onToast={showToast}
       />
     </div>
   );

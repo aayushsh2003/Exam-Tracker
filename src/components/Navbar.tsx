@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { 
   Layers, 
   Table, 
@@ -12,8 +12,9 @@ import {
   Upload, 
   RotateCcw,
   CheckCircle2,
-  Clock,
-  Briefcase
+  Briefcase,
+  FileJson,
+  Database
 } from 'lucide-react';
 import { ActiveTab, ExamItem } from '../types';
 
@@ -25,6 +26,7 @@ interface NavbarProps {
   onExportCsv: () => void;
   onExportJson: () => void;
   onImportJson: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onOpenBackupModal: () => void;
   onResetData: () => void;
   onOpenAiAdvisor: () => void;
 }
@@ -37,14 +39,14 @@ export const Navbar: React.FC<NavbarProps> = ({
   onExportCsv,
   onExportJson,
   onImportJson,
+  onOpenBackupModal,
   onResetData,
   onOpenAiAdvisor,
 }) => {
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const totalExams = exams.length;
-  const completedExams = exams.filter(e => e.status === 'Completed' || e.timelineStage === 'Exam Completed').length;
-  const highPriority = exams.filter(e => e.priority === 'Very High' || e.priority === 'High').length;
+  const completedExams = exams.filter(e => e.status === 'Completed' || e.timelineStage === 'Exam Completed' || e.isCompleted).length;
 
   const navItems: { id: ActiveTab; label: string; icon: React.ReactNode; badge?: string }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: <Layers className="w-4 h-4" /> },
@@ -63,7 +65,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="flex items-center justify-between h-16">
           {/* Logo & Subtitle */}
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 flex items-center justify-center shadow-md shadow-indigo-500/20 ring-1 ring-white/20">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 flex items-center justify-center shadow-md shadow-indigo-500/20 ring-1 ring-white/20 shrink-0">
               <Briefcase className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -71,11 +73,16 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <span className="font-bold text-lg tracking-tight text-white font-sans">
                   2026 Exam Tracker
                 </span>
-                <span className="text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                  Confirmed: {totalExams} Posts
+                <span className="text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 hidden sm:inline-block">
+                  {totalExams} Posts
                 </span>
+                {completedExams > 0 && (
+                  <span className="text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hidden md:inline-block">
+                    {completedExams} Done
+                  </span>
+                )}
               </div>
-              <p className="text-xs text-slate-400 hidden sm:block">
+              <p className="text-xs text-slate-400 hidden lg:block">
                 Master Database • Timeline • Milestones • Stage Matrix • Reference Vault
               </p>
             </div>
@@ -90,7 +97,8 @@ export const Navbar: React.FC<NavbarProps> = ({
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white shadow-sm shadow-purple-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
               <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
-              <span>AI Exam Strategist</span>
+              <span className="hidden sm:inline">AI Exam Strategist</span>
+              <span className="sm:hidden">AI</span>
             </button>
 
             {/* Quick Add Exam */}
@@ -103,38 +111,53 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="hidden md:inline">Add Post</span>
             </button>
 
-            {/* Export Dropdown / Menu */}
+            {/* Data Management Hub & JSON Actions */}
             <div className="flex items-center space-x-1 border-l border-slate-800 pl-2">
+              {/* Quick Download JSON Button */}
               <button
-                id="btn-export-csv"
-                onClick={onExportCsv}
-                title="Export to Excel / CSV"
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                id="btn-download-json"
+                onClick={onExportJson}
+                title="Download data in JSON format (.json)"
+                className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium text-indigo-300 hover:text-white bg-indigo-950/60 hover:bg-indigo-900/80 border border-indigo-500/30 transition-colors"
               >
-                <Download className="w-4 h-4" />
+                <Download className="w-3.5 h-3.5 text-indigo-400" />
+                <span className="hidden xl:inline font-mono">JSON</span>
               </button>
 
+              {/* Quick Upload JSON Button */}
               <label
-                htmlFor="json-import-input"
-                title="Import backup JSON"
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                htmlFor="json-import-input-nav"
+                title="Upload data in JSON format (.json)"
+                className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium text-emerald-300 hover:text-white bg-emerald-950/60 hover:bg-emerald-900/80 border border-emerald-500/30 transition-colors cursor-pointer"
               >
-                <Upload className="w-4 h-4" />
+                <Upload className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="hidden xl:inline font-mono">Upload</span>
                 <input
-                  id="json-import-input"
+                  id="json-import-input-nav"
                   ref={fileInputRef}
                   type="file"
-                  accept=".json"
+                  accept=".json,application/json"
                   className="hidden"
                   onChange={onImportJson}
                 />
               </label>
 
+              {/* Data Backup Modal Opener */}
+              <button
+                id="btn-open-backup-modal"
+                onClick={onOpenBackupModal}
+                title="Open Data Backup & JSON Management Center"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              >
+                <Database className="w-4 h-4" />
+              </button>
+
+              {/* Reset Data */}
               <button
                 id="btn-reset-data"
                 onClick={onResetData}
                 title="Restore default 2026 dataset"
-                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition-colors"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition-colors hidden sm:block"
               >
                 <RotateCcw className="w-4 h-4" />
               </button>
@@ -176,3 +199,4 @@ export const Navbar: React.FC<NavbarProps> = ({
     </header>
   );
 };
+
