@@ -1,0 +1,59 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with display settings, preparation targets, and preferences",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 150 },
+        "displayName": { "type": "string", "maxLength": 100 },
+        "targetCategory": { "type": "string", "maxLength": 100 },
+        "targetExamYear": { "type": "string", "maxLength": 50 },
+        "bio": { "type": "string", "maxLength": 500 }
+      },
+      "required": ["uid", "email"]
+    },
+    "UserTracker": {
+      "title": "UserTracker",
+      "description": "Master user tracker document storing exam metrics and timestamps",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "updatedAt": { "type": "string" },
+        "examsCount": { "type": "integer" },
+        "milestonesCount": { "type": "integer" }
+      },
+      "required": ["userId", "examsCount"]
+    },
+    "ExamRecord": {
+      "title": "ExamRecord",
+      "description": "An individual exam entry containing timeline and result data",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "examName": { "type": "string", "maxLength": 200 },
+        "postTitle": { "type": "string", "maxLength": 200 },
+        "examDate": { "type": "string", "maxLength": 100 },
+        "applicationFee": { "type": "string", "maxLength": 50 },
+        "statusTag": { "type": "string", "maxLength": 100 },
+        "categoryGroup": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["id", "examName"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User personal profile and targets"
+    },
+    "/user_trackers/{userId}": {
+      "schema": "UserTracker",
+      "description": "Master user tracking summary document"
+    },
+    "/user_trackers/{userId}/exams/{examId}": {
+      "schema": "ExamRecord",
+      "description": "Individual exam documents collection"
+    }
+  }
+}

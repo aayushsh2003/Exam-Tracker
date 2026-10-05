@@ -103,4 +103,26 @@ export interface ImportantReference {
   checklistItems: string[];
 }
 
-export type ActiveTab = 'dashboard' | 'master' | 'timeline' | 'calendar' | 'actions' | 'stageTracker' | 'references' | 'aiAdvisor';
+export interface UserPreferences {
+  autoSyncCloud: boolean;
+  notifyUpcomingDeadlines: boolean;
+  defaultView: ActiveTab;
+  targetCategory: string;
+  targetExamYear: string;
+}
+
+export interface UserProfile {
+  uid: string;
+  email: string;
+  displayName: string;
+  photoUrl?: string;
+  targetCategory?: string;
+  targetExamYear?: string;
+  bio?: string;
+  phoneNumber?: string;
+  createdAt?: string;
+  lastLoginAt?: string;
+  preferences?: UserPreferences;
+}
+
+export type ActiveTab = 'home' | 'dashboard' | 'master' | 'timeline' | 'calendar' | 'actions' | 'stageTracker' | 'references' | 'aiAdvisor';

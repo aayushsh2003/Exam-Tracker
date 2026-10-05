@@ -1,6 +1,6 @@
 {
-  "name": "2026 Exam & Recruitment Master Tracker",
-  "description": "Comprehensive tracking dashboard, visual timeline, milestone calendar, stage tracker, document vault, and AI strategy advisor for 31 applied recruitment examinations.",
+  "name": "2026–2027 Competitive Exam Command Center",
+  "description": "Track 31 government, banking, PSU & scientific exams. Manage dates, fees, syllabus milestones, and sync records to cloud Firestore with instant JSON backup.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
