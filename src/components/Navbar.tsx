@@ -15,6 +15,7 @@ import {
   Briefcase,
   Database,
   Cloud,
+  LogOut,
   User as UserIcon
 } from 'lucide-react';
 import { ActiveTab, ExamItem, UserProfile } from '../types';
@@ -36,6 +37,7 @@ interface NavbarProps {
   userProfile: UserProfile | null;
   onOpenProfileModal: () => void;
   onOpenAuthModal: () => void;
+  onSignOut?: () => Promise<void>;
   lastSyncedAt: string | null;
 }
 
@@ -55,6 +57,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   userProfile,
   onOpenProfileModal,
   onOpenAuthModal,
+  onSignOut,
   lastSyncedAt,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -119,20 +122,32 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="flex items-center space-x-2 sm:space-x-3">
             {/* User Profile / Auth Button */}
             {currentUser ? (
-              <button
-                onClick={onOpenProfileModal}
-                title={`Logged in as ${displayName || currentUser.email}. Click to view & edit Profile`}
-                className="inline-flex items-center gap-2 pl-1.5 pr-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs text-white transition-all cursor-pointer shadow-xs group"
-              >
-                <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-[11px] font-bold text-white group-hover:scale-105 transition-transform">
-                  {getInitials()}
-                </div>
-                <div className="text-left hidden sm:block">
-                  <span className="font-bold text-xs block leading-tight max-w-[100px] truncate">
-                    {displayName || 'My Profile'}
-                  </span>
-                </div>
-              </button>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={onOpenProfileModal}
+                  title={`Logged in as ${displayName || currentUser.email}. Click to view & edit Profile`}
+                  className="inline-flex items-center gap-2 pl-1.5 pr-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs text-white transition-all cursor-pointer shadow-xs group"
+                >
+                  <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-[11px] font-bold text-white group-hover:scale-105 transition-transform">
+                    {getInitials()}
+                  </div>
+                  <div className="text-left hidden sm:block">
+                    <span className="font-bold text-xs block leading-tight max-w-[100px] truncate">
+                      {displayName || 'My Profile'}
+                    </span>
+                  </div>
+                </button>
+
+                {onSignOut && (
+                  <button
+                    onClick={onSignOut}
+                    title="Sign Out of Private Workspace"
+                    className="p-1.5 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer border border-transparent hover:border-rose-500/20"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
             ) : (
               <button
                 onClick={onOpenAuthModal}

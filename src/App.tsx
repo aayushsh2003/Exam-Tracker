@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Loader2 } from 'lucide-react';
 import { 
   Navbar 
 } from './components/Navbar';
@@ -51,6 +52,9 @@ import {
   AuthModal 
 } from './components/AuthModal';
 import { 
+  AuthLandingGate 
+} from './components/AuthLandingGate';
+import { 
   FirestoreRulesModal 
 } from './components/FirestoreRulesModal';
 import { 
@@ -98,30 +102,11 @@ export default function App() {
   // Current Firebase Auth user state
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isAuthChecking, setIsAuthChecking] = useState<boolean>(true);
 
-  // Per-user isolated exams and milestones
-  const [exams, setExams] = useState<ExamItem[]>(() => {
-    // Initial load from storage if present
-    const key = getUserExamStorageKey(null);
-    const saved = localStorage.getItem(key) || localStorage.getItem('exams_master_tracker_v3');
-    if (saved) {
-      try { 
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      } catch (e) { console.error(e); }
-    }
-    return INITIAL_EXAMS;
-  });
-
-  const [milestones, setMilestones] = useState<MilestoneAction[]>(() => {
-    const key = getUserMilestonesStorageKey(null);
-    const saved = localStorage.getItem(key) || localStorage.getItem('exams_milestones_v3');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) { console.error(e); }
-    }
-    return INITIAL_MILESTONES;
-  });
-
+  // Per-user isolated exams and milestones (empty array by default - NO public data)
+  const [exams, setExams] = useState<ExamItem[]>([]);
+  const [milestones, setMilestones] = useState<MilestoneAction[]>([]);
   const [references] = useState<ImportantReference[]>(INITIAL_REFERENCES);
 
   // Active view tab (Home is default front door)
@@ -171,13 +156,14 @@ export default function App() {
       const activeUid = user ? user.uid : null;
 
       // Only re-fetch if user UID actually changed
-      if (prevUidRef.current === activeUid && userProfile) {
+      if (prevUidRef.current === activeUid && userProfile && user) {
+        setIsAuthChecking(false);
         return;
       }
       prevUidRef.current = activeUid;
 
       if (user) {
-        // Authenticated User Context
+        // Authenticated User Context - Load private data
         const userExamKey = getUserExamStorageKey(user.uid);
         const userMilestoneKey = getUserMilestonesStorageKey(user.uid);
 
@@ -248,12 +234,13 @@ export default function App() {
                 if (!cloudData.permissionDenied) {
                   saveUserTrackerData(user.uid, parsed, milestones, profile).catch(() => {});
                 }
+                setIsAuthChecking(false);
                 return;
               }
             } catch (e) { console.error(e); }
           }
 
-          // First-time user with no prior data: initialize personalized template
+          // First-time user with no prior data: initialize personalized starter copy
           setExams(INITIAL_EXAMS);
           setMilestones(INITIAL_MILESTONES);
           localStorage.setItem(userExamKey, JSON.stringify(INITIAL_EXAMS));
@@ -265,24 +252,13 @@ export default function App() {
             setLastSyncedAt(nowStr);
           }
         }
+        setIsAuthChecking(false);
       } else {
-        // Logged Out / Guest Workspace
+        // Logged Out Context - ZERO PUBLIC DATA EXPOSURE
         setUserProfile(null);
-        const guestExamKey = getUserExamStorageKey(null);
-        const guestMilestoneKey = getUserMilestonesStorageKey(null);
-
-        const guestExams = localStorage.getItem(guestExamKey);
-        if (guestExams) {
-          try {
-            const parsed = JSON.parse(guestExams);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              setExams(parsed);
-              return;
-            }
-          } catch (e) { console.error(e); }
-        }
-        setExams(INITIAL_EXAMS);
-        setMilestones(INITIAL_MILESTONES);
+        setExams([]);
+        setMilestones([]);
+        setIsAuthChecking(false);
       }
     });
 
@@ -575,11 +551,41 @@ export default function App() {
   const handleSignOut = async () => {
     try {
       await logoutUser();
-      showToast('Signed out from Firebase');
+      setCurrentUser(null);
+      setUserProfile(null);
+      setExams([]);
+      setMilestones([]);
+      showToast('Signed out. Your private workspace is locked.');
     } catch (err: any) {
       showToast(err.message || 'Sign out error');
     }
   };
+
+  // 1. Initial Authentication Check State
+  if (isAuthChecking) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white space-y-4 font-sans selection:bg-indigo-600">
+        <Loader2 className="w-10 h-10 text-indigo-500 animate-spin" />
+        <div className="text-center space-y-1">
+          <h3 className="font-extrabold text-sm text-slate-200 tracking-wider uppercase">
+            Verifying Candidate Clearance
+          </h3>
+          <p className="text-xs font-mono text-slate-400">Loading private recruitment workspace...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. PUBLIC GATE: If not authenticated, render the high-security portal gate.
+  // ZERO private exam data, candidate details, scorecards, or fees are exposed to public view.
+  if (!currentUser) {
+    return (
+      <AuthLandingGate
+        onAuthenticated={() => {}}
+        onToast={showToast}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900 flex flex-col font-sans antialiased">
@@ -640,6 +646,7 @@ export default function App() {
         userProfile={userProfile}
         onOpenProfileModal={() => setIsProfileModalOpen(true)}
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        onSignOut={handleSignOut}
         lastSyncedAt={lastSyncedAt}
       />
 

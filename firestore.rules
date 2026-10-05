@@ -1,7 +1,7 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow connection testing
+    // Connection test document
     match /test/{docId} {
       allow read: if true;
       allow write: if false;
@@ -9,15 +9,15 @@ service cloud.firestore {
 
     // User profile documents - isolated strictly to authenticated owner
     match /users/{userId} {
-      allow read, write: if request.auth != null && (request.auth.uid == userId || userId == 'guest-device');
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
     // User tracker master document and all subcollections (exams, milestones)
     match /user_trackers/{userId} {
-      allow read, write: if request.auth != null && (request.auth.uid == userId || userId == 'guest-device');
+      allow read, write: if request.auth != null && request.auth.uid == userId;
 
       match /{allPaths=**} {
-        allow read, write: if request.auth != null && (request.auth.uid == userId || userId == 'guest-device');
+        allow read, write: if request.auth != null && request.auth.uid == userId;
       }
     }
 
