@@ -423,8 +423,37 @@ export const AuthLandingGate: React.FC<AuthLandingGateProps> = ({
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-900 py-6 text-center text-xs text-slate-500">
+      <footer className="border-t border-slate-900 py-6 text-center text-xs text-slate-500 space-y-2">
         <p>🔒 2026–2027 Indian Competitive Examination Command Center • Cloud Firestore ABAC Security</p>
+        <p className="text-slate-400">
+          Designed & Developed by{' '}
+          <a
+            href="https://aayush-ki-pehchan.vercel.app/"
+            target="_blank"
+            rel="noreferrer"
+            className="text-indigo-400 hover:text-indigo-300 font-bold underline transition-colors"
+          >
+            Aayush Sharma (Aayush Ki Pehchan)
+          </a>{' '}
+          •{' '}
+          <a
+            href="https://github.com/aayushsh2003"
+            target="_blank"
+            rel="noreferrer"
+            className="text-slate-400 hover:text-white transition-colors"
+          >
+            GitHub
+          </a>{' '}
+          •{' '}
+          <a
+            href="https://www.linkedin.com/in/aayush-sharma-a44062299/"
+            target="_blank"
+            rel="noreferrer"
+            className="text-slate-400 hover:text-white transition-colors"
+          >
+            LinkedIn
+          </a>
+        </p>
       </footer>
     </div>
   );

@@ -388,14 +388,22 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-4 bg-slate-100 border-t border-slate-200 flex items-center justify-between">
-          <span className="text-[11px] text-slate-500">
-            Data secured with Firebase ABAC rules
-          </span>
+        <div className="p-4 bg-slate-100 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="text-[11px] text-slate-500">
+            <span>Data secured with Firebase ABAC rules • Developed by </span>
+            <a
+              href="https://aayush-ki-pehchan.vercel.app/"
+              target="_blank"
+              rel="noreferrer"
+              className="text-indigo-600 hover:text-indigo-800 font-bold underline transition-colors"
+            >
+              Aayush Sharma (Aayush Ki Pehchan)
+            </a>
+          </div>
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
+            className="px-4 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer self-end sm:self-auto"
           >
             Close
           </button>
