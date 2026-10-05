@@ -14,6 +14,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { testUserPermissions } from '../firebase/firestoreService';
+import { firebaseConfig } from '../firebase/config';
 import { User } from 'firebase/auth';
 
 interface FirestoreRulesModalProps {
@@ -99,7 +100,8 @@ export const FirestoreRulesModal: React.FC<FirestoreRulesModalProps> = ({
     }
   };
 
-  const consoleUrl = `https://console.firebase.google.com/project/exam-tracker-42bc0/firestore/rules`;
+  const projectId = firebaseConfig.projectId || 'your-project-id';
+  const consoleUrl = `https://console.firebase.google.com/project/${projectId}/firestore/rules`;
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
@@ -115,7 +117,7 @@ export const FirestoreRulesModal: React.FC<FirestoreRulesModalProps> = ({
                 <h2 className="text-lg font-extrabold text-white flex items-center gap-2">
                   <span>Configure Cloud Firestore Rules</span>
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                    exam-tracker-42bc0
+                    {projectId}
                   </span>
                 </h2>
                 <p className="text-xs text-slate-300 mt-0.5">
@@ -143,7 +145,7 @@ export const FirestoreRulesModal: React.FC<FirestoreRulesModalProps> = ({
               <span>Why are you seeing this?</span>
             </div>
             <p className="leading-relaxed">
-              Your web app is connected to your project <strong className="font-mono text-amber-900">exam-tracker-42bc0</strong> with user <strong className="font-mono text-amber-900">{currentUser?.email || 'authenticated user'}</strong>. Firebase Firestore currently defaults to deny-all or expired test rules.
+              Your web app is connected to your project <strong className="font-mono text-amber-900">{projectId}</strong> with user <strong className="font-mono text-amber-900">{currentUser?.email || 'authenticated user'}</strong>. Firebase Firestore currently defaults to deny-all or expired test rules.
             </p>
             <p className="leading-relaxed">
               Don't worry — your exams and changes are <strong>safely saved in your local workspace</strong>. To enable cloud persistence, copy and paste the security rules below into your Firebase Console.

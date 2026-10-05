@@ -36,6 +36,7 @@ import {
 import { ExamItem, MilestoneAction, ActiveTab, UserProfile } from '../types';
 import { exportCategorizedJson } from '../utils/exportUtils';
 import { User } from 'firebase/auth';
+import { firebaseConfig } from '../firebase/config';
 
 interface HomeViewProps {
   exams: ExamItem[];
@@ -131,7 +132,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
             <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-mono font-bold">
               <Cloud className="w-3.5 h-3.5 text-amber-400" />
-              <span>Firebase: exam-tracker-42bc0</span>
+              <span>Firebase: {firebaseConfig.projectId || 'Cloud Sync'}</span>
             </div>
 
             {currentUser ? (
@@ -335,7 +336,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
               </h2>
             </div>
             <p className="text-xs text-slate-300 mt-1 max-w-2xl">
-              Seamlessly persist your application records, milestones, scorecards, and timeline stages to Google Firebase Firestore under project <strong className="font-mono text-amber-300">exam-tracker-42bc0</strong>.
+              Seamlessly persist your application records, milestones, scorecards, and timeline stages to Google Firebase Firestore under project <strong className="font-mono text-amber-300">{firebaseConfig.projectId || 'Cloud Firestore'}</strong>.
             </p>
           </div>
 

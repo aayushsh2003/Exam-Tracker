@@ -31,6 +31,7 @@ import {
   importJsonDirectlyToFirestore 
 } from '../firebase/firestoreService';
 import { ExamItem, MilestoneAction } from '../types';
+import { firebaseConfig } from '../firebase/config';
 
 interface FirebaseSyncModalProps {
   isOpen: boolean;
@@ -223,7 +224,7 @@ export const FirebaseSyncModal: React.FC<FirebaseSyncModalProps> = ({
                 <h2 className="text-lg font-extrabold tracking-tight text-white flex items-center gap-2">
                   <span>Firebase Firestore Cloud Hub</span>
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                    exam-tracker-42bc0
+                    {firebaseConfig.projectId || 'Cloud Firestore'}
                   </span>
                 </h2>
                 <p className="text-xs text-slate-300 mt-0.5">
@@ -465,7 +466,7 @@ export const FirebaseSyncModal: React.FC<FirebaseSyncModalProps> = ({
           <div className="p-3 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-between text-[11px] text-slate-600">
             <span className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span>Project ID: <strong className="font-mono text-slate-800">exam-tracker-42bc0</strong></span>
+              <span>Project ID: <strong className="font-mono text-slate-800">{firebaseConfig.projectId || 'Active'}</strong></span>
             </span>
             <span>Last Synced: <strong className="text-slate-800">{lastSyncedAt || 'Not yet'}</strong></span>
           </div>

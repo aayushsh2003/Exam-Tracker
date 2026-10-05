@@ -26,6 +26,7 @@ import {
 import { UserProfile, ExamItem, MilestoneAction, ActiveTab } from '../types';
 import { exportCategorizedJson } from '../utils/exportUtils';
 import { User as FirebaseUser } from 'firebase/auth';
+import { firebaseConfig } from '../firebase/config';
 
 interface UserProfileModalProps {
   isOpen: boolean;
@@ -358,7 +359,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           <div className="p-3.5 rounded-2xl bg-indigo-50/70 border border-indigo-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-indigo-950">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
-              <span>Cloud Project: <strong className="font-mono">exam-tracker-42bc0</strong></span>
+              <span>Cloud Project: <strong className="font-mono">{firebaseConfig.projectId || 'Connected'}</strong></span>
               <span className="text-slate-400">•</span>
               <span>Firestore Sync: <strong className="font-semibold text-emerald-700">{lastSyncedAt || 'Active'}</strong></span>
             </div>

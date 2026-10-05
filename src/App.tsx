@@ -92,7 +92,7 @@ import {
   importJsonDirectlyToFirestore, 
   testConnection 
 } from './firebase/firestoreService';
-import { initAnalytics } from './firebase/config';
+import { initAnalytics, firebaseConfig } from './firebase/config';
 
 // Helper to get storage keys for an active user
 const getUserExamStorageKey = (uid: string | null) => uid ? `exams_user_${uid}` : 'exams_user_guest';
@@ -595,7 +595,7 @@ export default function App() {
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-white animate-pulse shrink-0"></span>
             <span>
-              <strong>Action Needed:</strong> Firebase project <code className="font-mono bg-black/20 px-1 py-0.5 rounded font-bold">exam-tracker-42bc0</code> requires security rules to be published in your Firebase Console. Your workspace is currently saved locally.
+              <strong>Action Needed:</strong> Firebase project <code className="font-mono bg-black/20 px-1 py-0.5 rounded font-bold">{firebaseConfig.projectId || 'Active Project'}</code> requires security rules to be published in your Firebase Console. Your workspace is currently saved locally.
             </span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
