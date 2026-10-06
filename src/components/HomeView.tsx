@@ -59,6 +59,7 @@ interface HomeViewProps {
   onQuickGuestSignIn?: () => Promise<void>;
   onSignOut?: () => Promise<void>;
   onToast: (msg: string) => void;
+  onLoadTemplateCatalog?: () => void;
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({
@@ -82,6 +83,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onQuickGuestSignIn,
   onSignOut,
   onToast,
+  onLoadTemplateCatalog,
 }) => {
   const jsonFileInputRef = useRef<HTMLInputElement>(null);
   const total = exams.length;
@@ -229,6 +231,40 @@ export const HomeView: React.FC<HomeViewProps> = ({
         <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-10 right-1/4 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
       </section>
+
+      {/* 1.5 FRESH PRIVATE WORKSPACE WELCOME (SHOWN WHEN EXAMS LIST IS EMPTY) */}
+      {exams.length === 0 && (
+        <section className="bg-slate-900 border border-indigo-500/30 rounded-3xl p-6 sm:p-8 text-center space-y-4 shadow-xl">
+          <div className="w-12 h-12 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 mx-auto">
+            <Sparkles className="w-6 h-6" />
+          </div>
+          <div className="space-y-1.5">
+            <h3 className="text-xl font-extrabold text-white">Your Workspace is Private & Empty</h3>
+            <p className="text-xs sm:text-sm text-slate-300 max-w-xl mx-auto leading-relaxed">
+              Welcome, <strong>{candidateName}</strong>! Your account has its own isolated cloud database. No exams or notes from other accounts are shown. You can add your targeted exams manually, or load the official 2026 government recruitment notification catalog.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+            <button
+              onClick={onAddNewExam}
+              className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-md shadow-indigo-600/25"
+            >
+              <Plus className="w-4 h-4" />
+              <span>+ Add Custom Exam</span>
+            </button>
+
+            {onLoadTemplateCatalog && (
+              <button
+                onClick={onLoadTemplateCatalog}
+                className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <Database className="w-4 h-4 text-emerald-400" />
+                <span>Load 2026 Exam Catalog (31 Posts)</span>
+              </button>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* 2. STATS & CATEGORY BREAKDOWN CARDS */}
       <section className="grid grid-cols-2 md:grid-cols-5 gap-4">

@@ -135,6 +135,7 @@ export default function App() {
   const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
 
   const prevUidRef = useRef<string | null>(null);
+  const loadedUidRef = useRef<string | null>(null);
 
   // Toast feedback helper
   const showToast = (msg: string) => {
@@ -152,137 +153,157 @@ export default function App() {
   // Triggered when authentication status changes (login / switch user / logout)
   useEffect(() => {
     const unsubscribe = subscribeToAuth(async (user) => {
-      setCurrentUser(user);
       const activeUid = user ? user.uid : null;
 
-      // Only re-fetch if user UID actually changed
-      if (prevUidRef.current === activeUid && userProfile && user) {
-        setIsAuthChecking(false);
-        return;
-      }
-      prevUidRef.current = activeUid;
-
-      if (user) {
-        // Authenticated User Context - Load private data
-        const userExamKey = getUserExamStorageKey(user.uid);
-        const userMilestoneKey = getUserMilestonesStorageKey(user.uid);
-
-        // 1. Fetch user profile from Firestore
-        const profileRes = await fetchUserProfile(user.uid);
-        let profile = profileRes.profile;
-        if (profileRes.permissionDenied) {
-          setFirestorePermissionDenied(true);
-        }
-
-        if (!profile) {
-          // Check local profile cache first
-          const localProfileStr = localStorage.getItem('profile_user_' + user.uid);
-          if (localProfileStr) {
-            try { profile = JSON.parse(localProfileStr); } catch {}
-          }
-
-          if (!profile) {
-            profile = {
-              uid: user.uid,
-              email: user.email || '',
-              displayName: user.displayName || user.email?.split('@')[0] || 'Candidate',
-              targetCategory: 'Computer Science & IT',
-              targetExamYear: '2026–2027',
-              bio: 'Tracking competitive recruitment exams and preparation milestones.',
-              createdAt: new Date().toISOString(),
-              preferences: {
-                autoSyncCloud: true,
-                notifyUpcomingDeadlines: true,
-                defaultView: 'home',
-                targetCategory: 'Computer Science & IT',
-                targetExamYear: '2026–2027',
-              },
-            };
-          }
-
-          if (!profileRes.permissionDenied) {
-            saveUserProfile(user.uid, profile).catch(() => {});
-          }
-        }
-        setUserProfile(profile);
-        localStorage.setItem('profile_user_' + user.uid, JSON.stringify(profile));
-
-        // 2. Fetch user's distinct exams and milestones from Cloud Firestore
-        const cloudData = await fetchUserTrackerData(user.uid);
-        if (cloudData.permissionDenied) {
-          setFirestorePermissionDenied(true);
-        }
-
-        if (cloudData.success && cloudData.exams && cloudData.exams.length > 0) {
-          // Loaded this user's cloud data!
-          setExams(cloudData.exams);
-          setMilestones(cloudData.milestones || []);
-          localStorage.setItem(userExamKey, JSON.stringify(cloudData.exams));
-          if (cloudData.milestones) {
-            localStorage.setItem(userMilestoneKey, JSON.stringify(cloudData.milestones));
-          }
-          const nowStr = new Date().toLocaleTimeString();
-          setLastSyncedAt(nowStr);
-        } else {
-          // Check if this user had any local records saved previously
-          const localUserExams = localStorage.getItem(userExamKey);
-          if (localUserExams) {
-            try {
-              const parsed = JSON.parse(localUserExams);
-              if (Array.isArray(parsed) && parsed.length > 0) {
-                setExams(parsed);
-                if (!cloudData.permissionDenied) {
-                  saveUserTrackerData(user.uid, parsed, milestones, profile).catch(() => {});
-                }
-                setIsAuthChecking(false);
-                return;
-              }
-            } catch (e) { console.error(e); }
-          }
-
-          // First-time user with no prior data: initialize personalized starter copy
-          setExams(INITIAL_EXAMS);
-          setMilestones(INITIAL_MILESTONES);
-          localStorage.setItem(userExamKey, JSON.stringify(INITIAL_EXAMS));
-          localStorage.setItem(userMilestoneKey, JSON.stringify(INITIAL_MILESTONES));
-          
-          if (!cloudData.permissionDenied) {
-            saveUserTrackerData(user.uid, INITIAL_EXAMS, INITIAL_MILESTONES, profile).catch(() => {});
-            const nowStr = new Date().toLocaleTimeString();
-            setLastSyncedAt(nowStr);
-          }
-        }
-        setIsAuthChecking(false);
-      } else {
-        // Logged Out Context - ZERO PUBLIC DATA EXPOSURE
+      // If user logged out: zero public data, purge memory
+      if (!user) {
+        loadedUidRef.current = null;
+        prevUidRef.current = null;
+        setCurrentUser(null);
         setUserProfile(null);
         setExams([]);
         setMilestones([]);
         setIsAuthChecking(false);
+        return;
       }
+
+      // If UID changed, immediately wipe memory state from previous account
+      if (prevUidRef.current !== activeUid) {
+        setExams([]);
+        setMilestones([]);
+        loadedUidRef.current = null;
+      }
+      prevUidRef.current = activeUid;
+      setCurrentUser(user);
+
+      // Authenticated User Context - Load private data
+      const userExamKey = getUserExamStorageKey(user.uid);
+      const userMilestoneKey = getUserMilestonesStorageKey(user.uid);
+
+      // 1. Fetch user profile from Firestore
+      const profileRes = await fetchUserProfile(user.uid);
+      let profile = profileRes.profile;
+      if (profileRes.permissionDenied) {
+        setFirestorePermissionDenied(true);
+      }
+
+      if (!profile) {
+        // Check local profile cache first
+        const localProfileStr = localStorage.getItem('profile_user_' + user.uid);
+        if (localProfileStr) {
+          try { profile = JSON.parse(localProfileStr); } catch {}
+        }
+
+        if (!profile) {
+          profile = {
+            uid: user.uid,
+            email: user.email || '',
+            displayName: user.displayName || user.email?.split('@')[0] || 'Candidate',
+            targetCategory: 'Computer Science & IT',
+            targetExamYear: '2026–2027',
+            bio: 'Tracking competitive recruitment exams and preparation milestones.',
+            createdAt: new Date().toISOString(),
+            preferences: {
+              autoSyncCloud: true,
+              notifyUpcomingDeadlines: true,
+              defaultView: 'home',
+              targetCategory: 'Computer Science & IT',
+              targetExamYear: '2026–2027',
+            },
+          };
+        }
+
+        if (!profileRes.permissionDenied) {
+          saveUserProfile(user.uid, profile).catch(() => {});
+        }
+      }
+      setUserProfile(profile);
+      localStorage.setItem('profile_user_' + user.uid, JSON.stringify(profile));
+
+      // 2. Fetch user's distinct exams and milestones from Cloud Firestore
+      const cloudData = await fetchUserTrackerData(user.uid);
+      if (cloudData.permissionDenied) {
+        setFirestorePermissionDenied(true);
+      }
+
+      if (cloudData.success && cloudData.exams && cloudData.exams.length > 0) {
+        // Loaded this user's cloud data!
+        setExams(cloudData.exams);
+        setMilestones(cloudData.milestones || []);
+        localStorage.setItem(userExamKey, JSON.stringify(cloudData.exams));
+        if (cloudData.milestones) {
+          localStorage.setItem(userMilestoneKey, JSON.stringify(cloudData.milestones));
+        }
+        const nowStr = new Date().toLocaleTimeString();
+        setLastSyncedAt(nowStr);
+      } else {
+        // Check if this user had any local records saved previously for this specific UID
+        const localUserExams = localStorage.getItem(userExamKey);
+        if (localUserExams) {
+          try {
+            const parsed = JSON.parse(localUserExams);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setExams(parsed);
+              const localUserMilestones = localStorage.getItem(userMilestoneKey);
+              if (localUserMilestones) {
+                try { setMilestones(JSON.parse(localUserMilestones)); } catch {}
+              }
+              if (!cloudData.permissionDenied) {
+                saveUserTrackerData(user.uid, parsed, milestones, profile).catch(() => {});
+              }
+              loadedUidRef.current = user.uid;
+              setIsAuthChecking(false);
+              return;
+            }
+          } catch (e) { console.error(e); }
+        }
+
+        // BRAND NEW ACCOUNT / DIFFERENT USER ID:
+        // Start with a clean, private, empty workspace (0 exams).
+        // Never auto-populate another user's exams or json data!
+        setExams([]);
+        setMilestones([]);
+        localStorage.setItem(userExamKey, JSON.stringify([]));
+        localStorage.setItem(userMilestoneKey, JSON.stringify([]));
+        
+        if (!cloudData.permissionDenied) {
+          saveUserTrackerData(user.uid, [], [], profile).catch(() => {});
+          const nowStr = new Date().toLocaleTimeString();
+          setLastSyncedAt(nowStr);
+        }
+      }
+
+      loadedUidRef.current = user.uid;
+      setIsAuthChecking(false);
     });
 
     return () => unsubscribe();
   }, []);
 
   // Save changes to current user's local storage and optionally auto-sync to Firestore
+  // CRITICAL SECURITY: Only runs when user is authenticated AND data has loaded for this exact UID
   useEffect(() => {
-    const activeUid = currentUser ? currentUser.uid : null;
-    const examKey = getUserExamStorageKey(activeUid);
+    if (!currentUser || loadedUidRef.current !== currentUser.uid) {
+      return;
+    }
+
+    const examKey = getUserExamStorageKey(currentUser.uid);
     localStorage.setItem(examKey, JSON.stringify(exams));
 
     // Only auto-sync if user is authenticated, autoSync is enabled, AND permissions are not denied
-    if (currentUser && !firestorePermissionDenied && userProfile?.preferences?.autoSyncCloud !== false) {
+    if (!firestorePermissionDenied && userProfile?.preferences?.autoSyncCloud !== false) {
       const timer = setTimeout(() => {
         saveUserTrackerData(currentUser.uid, exams, milestones).catch(() => {});
-      }, 2500);
+      }, 2000);
       return () => clearTimeout(timer);
     }
   }, [exams, currentUser, userProfile, firestorePermissionDenied]);
 
   useEffect(() => {
-    const activeUid = currentUser ? currentUser.uid : null;
-    const milestoneKey = getUserMilestonesStorageKey(activeUid);
+    if (!currentUser || loadedUidRef.current !== currentUser.uid) {
+      return;
+    }
+    const milestoneKey = getUserMilestonesStorageKey(currentUser.uid);
     localStorage.setItem(milestoneKey, JSON.stringify(milestones));
   }, [milestones, currentUser]);
 
@@ -291,6 +312,29 @@ export default function App() {
       localStorage.setItem('exams_last_synced_at', lastSyncedAt);
     }
   }, [lastSyncedAt]);
+
+  // Handler to explicitly load the clean 2026 recruitment catalog into the user's workspace on demand
+  const handleLoadTemplateCatalog = async () => {
+    if (!currentUser) return;
+    if (exams.length > 0) {
+      const confirmLoad = window.confirm(
+        'Loading the 2026 catalog will add the standard 31 recruitment notifications (Banking, ISRO, GATE, PSU Cadres) to your workspace. Continue?'
+      );
+      if (!confirmLoad) return;
+    }
+    setExams(INITIAL_EXAMS);
+    setMilestones(INITIAL_MILESTONES);
+    const userExamKey = getUserExamStorageKey(currentUser.uid);
+    const userMilestoneKey = getUserMilestonesStorageKey(currentUser.uid);
+    localStorage.setItem(userExamKey, JSON.stringify(INITIAL_EXAMS));
+    localStorage.setItem(userMilestoneKey, JSON.stringify(INITIAL_MILESTONES));
+    if (!firestorePermissionDenied) {
+      await saveUserTrackerData(currentUser.uid, INITIAL_EXAMS, INITIAL_MILESTONES, userProfile || undefined);
+      const nowStr = new Date().toLocaleTimeString();
+      setLastSyncedAt(nowStr);
+    }
+    showToast('Clean 2026 Recruitment Catalog loaded into your workspace!');
+  };
 
   // Exam CRUD Handlers (Operates on the active user's isolated workspace)
   const handleSaveExam = (exam: ExamItem) => {
@@ -551,6 +595,8 @@ export default function App() {
   const handleSignOut = async () => {
     try {
       await logoutUser();
+      loadedUidRef.current = null;
+      prevUidRef.current = null;
       setCurrentUser(null);
       setUserProfile(null);
       setExams([]);
@@ -680,6 +726,7 @@ export default function App() {
             onQuickGuestSignIn={handleQuickGuestSignIn}
             onSignOut={handleSignOut}
             onToast={showToast}
+            onLoadTemplateCatalog={handleLoadTemplateCatalog}
           />
         )}
 
@@ -718,6 +765,7 @@ export default function App() {
               setExamToComplete(exam);
               setIsCompleteModalOpen(true);
             }}
+            onLoadTemplateCatalog={handleLoadTemplateCatalog}
           />
         )}
 

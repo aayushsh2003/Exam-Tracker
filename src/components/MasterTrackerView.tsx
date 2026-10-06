@@ -34,6 +34,7 @@ interface MasterTrackerViewProps {
   onExportJson?: () => void;
   onOpenBackupModal?: () => void;
   onOpenCompleteModal?: (exam: ExamItem) => void;
+  onLoadTemplateCatalog?: () => void;
 }
 
 export const MasterTrackerView: React.FC<MasterTrackerViewProps> = ({
@@ -47,6 +48,7 @@ export const MasterTrackerView: React.FC<MasterTrackerViewProps> = ({
   onExportJson,
   onOpenBackupModal,
   onOpenCompleteModal,
+  onLoadTemplateCatalog,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
@@ -342,8 +344,38 @@ export const MasterTrackerView: React.FC<MasterTrackerViewProps> = ({
         </div>
       </div>
 
-      {/* Main Content: Table or Cards */}
-      {viewMode === 'table' ? (
+      {/* Main Content: Table or Cards or Empty Workspace State */}
+      {exams.length === 0 ? (
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 sm:p-12 text-center space-y-4">
+          <div className="w-14 h-14 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 mx-auto">
+            <Sparkles className="w-7 h-7" />
+          </div>
+          <div className="space-y-1.5 max-w-md mx-auto">
+            <h3 className="text-xl font-extrabold text-slate-900">Your Master Tracker is Clean & Empty</h3>
+            <p className="text-xs sm:text-sm text-slate-500">
+              No exams or notes from other accounts are present. Start building your custom tracker or load the clean 2026 government recruitment template.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+            <button
+              onClick={onAddNewExam}
+              className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-md shadow-indigo-600/20"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Custom Exam</span>
+            </button>
+            {onLoadTemplateCatalog && (
+              <button
+                onClick={onLoadTemplateCatalog}
+                className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <Layers className="w-4 h-4 text-emerald-400" />
+                <span>Load 2026 Recruitment Catalog (31 Posts)</span>
+              </button>
+            )}
+          </div>
+        </div>
+      ) : viewMode === 'table' ? (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
           <div className="overflow-x-auto max-h-[720px] overflow-y-auto">
             <table className="w-full text-left text-xs border-collapse">
