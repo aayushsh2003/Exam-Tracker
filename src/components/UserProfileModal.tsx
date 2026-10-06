@@ -36,7 +36,9 @@ interface UserProfileModalProps {
   onSaveProfile: (profile: Partial<UserProfile>) => Promise<void>;
   onSignOut: () => Promise<void>;
   onOpenAuthModal: () => void;
-  onResetUserData: () => void;
+  onResetUserData?: () => void;
+  onClearWorkspace?: () => void;
+  onLoadTemplateCatalog?: () => void;
   exams: ExamItem[];
   milestones: MilestoneAction[];
   lastSyncedAt: string | null;
@@ -61,6 +63,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   onSignOut,
   onOpenAuthModal,
   onResetUserData,
+  onClearWorkspace,
+  onLoadTemplateCatalog,
   exams,
   milestones,
   lastSyncedAt,
@@ -226,7 +230,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     type="text"
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
-                    placeholder="e.g. Aayush Sharma"
+                    placeholder="Enter your full name"
                     className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
@@ -283,7 +287,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
                 rows={2}
-                placeholder="e.g. Aiming for Top 100 in GATE 2027 CS & clearing ISRO Scientist 'SC'. Daily mock schedule: 6 hours."
+                placeholder="Enter your target goals, preparation hours, or focus strategy..."
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
               />
             </div>
@@ -325,32 +329,47 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowResetConfirm(true)}
-                  className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-700 text-xs font-semibold border border-slate-200 hover:border-rose-200 transition-colors flex items-center gap-1.5 cursor-pointer"
+                  className="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold border border-rose-200 transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
-                  <span>Reset My Workspace</span>
+                  <span>Clean & Wipe All Exams (0 Exams)</span>
                 </button>
               ) : (
-                <div className="flex items-center gap-2 p-1.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800">
-                  <span className="font-semibold text-[11px]">Reset your exams to default 31 template?</span>
+                <div className="flex items-center gap-2 p-1.5 rounded-xl bg-rose-100 border border-rose-300 text-xs text-rose-900">
+                  <span className="font-bold text-[11px]">Wipe all exams to a clean empty workspace?</span>
                   <button
                     type="button"
                     onClick={() => {
-                      onResetUserData();
+                      if (onClearWorkspace) {
+                        onClearWorkspace();
+                      } else if (onResetUserData) {
+                        onResetUserData();
+                      }
                       setShowResetConfirm(false);
                     }}
-                    className="px-2 py-1 rounded bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-bold cursor-pointer"
+                    className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-bold cursor-pointer"
                   >
-                    Confirm Reset
+                    Yes, Wipe Clean
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowResetConfirm(false)}
-                    className="px-2 py-1 rounded bg-white text-slate-700 text-[11px] font-semibold border border-slate-200 cursor-pointer"
+                    className="px-2 py-1 rounded-lg bg-white text-slate-700 text-[11px] font-semibold border border-slate-200 cursor-pointer"
                   >
                     Cancel
                   </button>
                 </div>
+              )}
+
+              {onLoadTemplateCatalog && (
+                <button
+                  type="button"
+                  onClick={onLoadTemplateCatalog}
+                  className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold border border-slate-200 transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Layers className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>Load 2026 Catalog (31 Posts)</span>
+                </button>
               )}
             </div>
           </div>

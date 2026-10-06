@@ -224,19 +224,27 @@ export async function saveUserTrackerData(
       ...(profile ? { profile } : {})
     };
 
-    // Save master document
-    await setDoc(summaryRef, payload, { merge: true });
+    // Save master document cleanly (overwriting stale lists)
+    await setDoc(summaryRef, payload);
 
-    // Also sync subcollection batch for granular Firestore queries
+    // Sync subcollection: delete old docs that no longer exist, update active docs
     const batch = writeBatch(db);
     const userExamsCol = collection(db, 'user_trackers', userId, 'exams');
+    const existingSnap = await getDocs(userExamsCol);
+    const currentExamIds = new Set(exams.map(e => String(e.id)));
+
+    existingSnap.forEach((docSnap) => {
+      if (!currentExamIds.has(docSnap.id)) {
+        batch.delete(docSnap.ref);
+      }
+    });
 
     exams.forEach((exam) => {
       const examDocRef = doc(userExamsCol, String(exam.id));
       batch.set(examDocRef, {
         ...exam,
         updatedAt: serverTimestamp(),
-      }, { merge: true });
+      });
     });
 
     await batch.commit();
@@ -263,6 +271,41 @@ export async function saveUserTrackerData(
 }
 
 /**
+ * Completely purges and clears a user's cloud records (master doc + subcollection)
+ */
+export async function clearUserTrackerData(userId: string): Promise<boolean> {
+  try {
+    const summaryRef = doc(db, 'user_trackers', userId);
+    await setDoc(summaryRef, {
+      userId,
+      updatedAt: serverTimestamp(),
+      examsCount: 0,
+      milestonesCount: 0,
+      categorizedSummary: {
+        completedAnnounced: 0,
+        completedAwaited: 0,
+        upcomingActive: 0,
+        awaitingDate: 0,
+      },
+      exams: [],
+      milestones: [],
+    });
+
+    const userExamsCol = collection(db, 'user_trackers', userId, 'exams');
+    const existingSnap = await getDocs(userExamsCol);
+    const batch = writeBatch(db);
+    existingSnap.forEach((docSnap) => {
+      batch.delete(docSnap.ref);
+    });
+    await batch.commit();
+    return true;
+  } catch (e) {
+    console.error('Error clearing tracker data:', e);
+    return false;
+  }
+}
+
+/**
  * Loads exam tracker data from Firestore for a given user.
  */
 export async function fetchUserTrackerData(userId: string): Promise<{
@@ -282,25 +325,9 @@ export async function fetchUserTrackerData(userId: string): Promise<{
       const data = snap.data() as FirestoreTrackerPayload;
       return {
         success: true,
-        exams: data.exams || [],
-        milestones: data.milestones || [],
+        exams: Array.isArray(data.exams) ? data.exams : [],
+        milestones: Array.isArray(data.milestones) ? data.milestones : [],
         profile: data.profile as UserProfile | undefined,
-      };
-    }
-
-    // If master doc does not exist, try reading from subcollection
-    const userExamsCol = collection(db, 'user_trackers', userId, 'exams');
-    const examsSnap = await getDocs(userExamsCol);
-
-    if (!examsSnap.empty) {
-      const exams: ExamItem[] = [];
-      examsSnap.forEach(docSnap => {
-        exams.push(docSnap.data() as ExamItem);
-      });
-      return {
-        success: true,
-        exams,
-        milestones: [],
       };
     }
 

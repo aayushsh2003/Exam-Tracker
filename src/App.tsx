@@ -90,6 +90,7 @@ import {
   saveUserProfile,
   fetchUserProfile,
   importJsonDirectlyToFirestore, 
+  clearUserTrackerData,
   testConnection 
 } from './firebase/firestoreService';
 import { initAnalytics, firebaseConfig } from './firebase/config';
@@ -226,8 +227,8 @@ export default function App() {
         setFirestorePermissionDenied(true);
       }
 
-      if (cloudData.success && cloudData.exams && cloudData.exams.length > 0) {
-        // Loaded this user's cloud data!
+      if (cloudData.success && Array.isArray(cloudData.exams)) {
+        // User has explicit cloud records (0 or more)
         setExams(cloudData.exams);
         setMilestones(cloudData.milestones || []);
         localStorage.setItem(userExamKey, JSON.stringify(cloudData.exams));
@@ -237,29 +238,8 @@ export default function App() {
         const nowStr = new Date().toLocaleTimeString();
         setLastSyncedAt(nowStr);
       } else {
-        // Check if this user had any local records saved previously for this specific UID
-        const localUserExams = localStorage.getItem(userExamKey);
-        if (localUserExams) {
-          try {
-            const parsed = JSON.parse(localUserExams);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              setExams(parsed);
-              const localUserMilestones = localStorage.getItem(userMilestoneKey);
-              if (localUserMilestones) {
-                try { setMilestones(JSON.parse(localUserMilestones)); } catch {}
-              }
-              if (!cloudData.permissionDenied) {
-                saveUserTrackerData(user.uid, parsed, milestones, profile).catch(() => {});
-              }
-              loadedUidRef.current = user.uid;
-              setIsAuthChecking(false);
-              return;
-            }
-          } catch (e) { console.error(e); }
-        }
-
-        // BRAND NEW ACCOUNT / DIFFERENT USER ID:
-        // Start with a clean, private, empty workspace (0 exams).
+        // BRAND NEW ACCOUNT OR UNINITIALIZED ACCOUNT:
+        // Always start 100% clean with 0 exams!
         // Never auto-populate another user's exams or json data!
         setExams([]);
         setMilestones([]);
@@ -422,21 +402,32 @@ export default function App() {
     }
   };
 
+  // Clean & Wipe current user's workspace to 0 exams
+  const handleClearWorkspace = async () => {
+    if (!currentUser) return;
+    const ok = window.confirm(
+      'Are you sure you want to clean and wipe all exams from your workspace? Your list will be reset to 0 exams.'
+    );
+    if (!ok) return;
+
+    setExams([]);
+    setMilestones([]);
+    const userExamKey = getUserExamStorageKey(currentUser.uid);
+    const userMilestoneKey = getUserMilestonesStorageKey(currentUser.uid);
+    localStorage.setItem(userExamKey, JSON.stringify([]));
+    localStorage.setItem(userMilestoneKey, JSON.stringify([]));
+
+    if (!firestorePermissionDenied) {
+      await clearUserTrackerData(currentUser.uid);
+      const nowStr = new Date().toLocaleTimeString();
+      setLastSyncedAt(nowStr);
+    }
+    showToast('Workspace cleaned successfully! 0 exams tracked.');
+  };
+
   // Reset current user's workspace
   const handleResetUserData = () => {
-    const activeUid = currentUser ? currentUser.uid : null;
-    const examKey = getUserExamStorageKey(activeUid);
-    const milestoneKey = getUserMilestonesStorageKey(activeUid);
-
-    setExams(INITIAL_EXAMS);
-    setMilestones(INITIAL_MILESTONES);
-    localStorage.setItem(examKey, JSON.stringify(INITIAL_EXAMS));
-    localStorage.setItem(milestoneKey, JSON.stringify(INITIAL_MILESTONES));
-
-    if (currentUser && !firestorePermissionDenied) {
-      saveUserTrackerData(currentUser.uid, INITIAL_EXAMS, INITIAL_MILESTONES, userProfile || undefined).catch(() => {});
-    }
-    showToast('Reset your workspace to default 31 recruitments');
+    handleClearWorkspace();
   };
 
   // Backup & Export Handlers
@@ -843,7 +834,9 @@ export default function App() {
           setIsProfileModalOpen(false);
           setIsAuthModalOpen(true);
         }}
-        onResetUserData={handleResetUserData}
+        onResetUserData={handleClearWorkspace}
+        onClearWorkspace={handleClearWorkspace}
+        onLoadTemplateCatalog={handleLoadTemplateCatalog}
         exams={exams}
         milestones={milestones}
         lastSyncedAt={lastSyncedAt}

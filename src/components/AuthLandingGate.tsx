@@ -325,7 +325,7 @@ export const AuthLandingGate: React.FC<AuthLandingGateProps> = ({
                       <input
                         type="text"
                         required
-                        placeholder="e.g. Aayush Sharma"
+                        placeholder="Enter your full name"
                         value={displayName}
                         onChange={(e) => setDisplayName(e.target.value)}
                         className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
